@@ -255,7 +255,14 @@ def ai_parse_with_mistral(text: str) -> dict:
 - relation: "S/o", "D/o", "W/o", or "H/o" — infer from gender/context (default "S/o")
 - guardian: parent or husband name if mentioned (string, empty if not found)
 - address: residence location if mentioned (string, empty if not found)
-- issue_type: one of "{issue_types}" — use "other" if it doesn't fit any category
+- issue_type: one of "{issue_types}". Classification rules (check in order):
+  * "death_benefit" — if someone has died, expired, passed away, or demise is mentioned
+  * "health" — if medical condition, hospital, disease, treatment, surgery, or illness is mentioned
+  * "education" — if school, college, fees, student, study, or scholarship is mentioned
+  * "marriage" — if marriage, wedding, or post-marriage financial hardship is mentioned
+  * "financial" — if general financial hardship, debt, poverty, or money problems are mentioned (NOT covered by above)
+  * "general" — for recommendation or general support letters
+  * "other" — if the issue does NOT fit any of the above categories (e.g. house repair, accident, natural disaster)
 - body: Three formal paragraphs separated by blank lines, suitable for an official community letter.
   Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
   Paragraph 2 (Details): Explain the situation in detail. For health: hospital, diagnosis, treatment, expenses. For education: academic details, fees. For marriage: marriage details. For death: death details, date, cause. For financial: situation details, expenses. 2-3 sentences.
