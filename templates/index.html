@@ -2,312 +2,296 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SKSSF Letter Automation — Valachil Padavu Unit</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SKSSF Letter Generator — Valachil Padavu</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
-  --accent:#3fb950;--accent2:#58a6ff;--accent3:#f78166;
-  --text:#e6edf3;--muted:#8b949e;--gold:#d4a848;--purple:#a371f7;
+  --bg:#f5f6f8;--surface:#ffffff;--border:#e0e3e8;--border2:#cdd2d8;
+  --text:#1a2332;--muted:#6b7785;--muted2:#9aa5b1;
+  --primary:#1a6b4c;--primary-hover:#155a3f;--primary-light:#e8f5ef;
+  --accent:#2d7a5f;--danger:#c0392b;--danger-light:#fdf0ee;
+  --shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 4px 20px rgba(0,0,0,.08);
+  --radius:12px;--radius-sm:8px;
 }
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
 
 /* ── Header ── */
-.header{
-  background:linear-gradient(135deg,#0d2b0d 0%,#0d1117 40%,#0d1a2b 100%);
-  border-bottom:1px solid var(--border);padding:20px 40px;
-  display:flex;align-items:center;gap:16px;
-}
-.header-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--accent),#2ea043);
-  border-radius:12px;display:grid;place-items:center;font-size:24px;flex-shrink:0;}
-.header-title{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--accent);}
-.header-sub{font-size:.8rem;color:var(--muted);margin-top:2px;}
-.header-badge{margin-left:auto;background:rgba(63,185,80,.15);border:1px solid var(--accent);
-  color:var(--accent);padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:6px;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.header-logo{width:44px;height:44px;background:var(--primary);border-radius:10px;
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;}
+.header-title{font-size:1.15rem;font-weight:700;color:var(--text);}
+.header-sub{font-size:.78rem;color:var(--muted);margin-top:1px;}
+.header-badge{margin-left:auto;background:var(--primary-light);color:var(--primary);
+  padding:5px 14px;border-radius:20px;font-size:.75rem;font-weight:600;}
 
-/* ── Main layout ── */
-.container{max-width:1150px;margin:0 auto;padding:28px 24px;display:grid;grid-template-columns:1fr 440px;gap:28px;}
-@media(max-width:890px){.container{grid-template-columns:1fr;}}
+/* ── Layout ── */
+.container{max-width:1200px;margin:0 auto;padding:24px 20px;
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:900px){.container{grid-template-columns:1fr;}}
 
-/* ── Panel ── */
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;}
-.panel-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:18px;
-  display:flex;align-items:center;gap:8px;}
-.panel-title span{font-size:1.1rem;}
+/* ── Panels ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;box-shadow:var(--shadow);}
+.panel-title{font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.panel-title .icon{font-size:1.15rem;}
 
-/* ── AI Assistant Box ── */
-.ai-box{
-  background:linear-gradient(135deg,rgba(163,113,247,.1) 0%,rgba(88,166,255,.05) 100%);
-  border:1px solid rgba(163,113,247,.3);border-radius:14px;padding:18px;margin-bottom:24px;
-}
-.ai-title{font-size:.88rem;font-weight:700;color:var(--purple);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.ai-desc{font-size:.78rem;color:var(--muted);margin-bottom:12px;line-height:1.4;}
+/* ── AI Box ── */
+.ai-box{background:var(--primary-light);border:1px solid #b8dcc8;border-radius:var(--radius);
+  padding:18px;margin-bottom:20px;}
+.ai-title{font-size:.9rem;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.ai-desc{font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.45;}
 .ai-input-row{display:flex;gap:8px;}
-.ai-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.85rem;}
-.ai-btn{background:linear-gradient(135deg,#8957e5,#a371f7);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:600;font-size:.82rem;cursor:pointer;transition:transform .15s;}
-.ai-btn:hover{transform:scale(1.02);}
-.sample-tag{display:inline-block;font-size:.7rem;color:var(--accent2);cursor:pointer;text-decoration:underline;margin-top:6px;}
+.ai-input{flex:1;background:#fff;border:1px solid var(--border2);border-radius:var(--radius-sm);
+  padding:10px 12px;color:var(--text);font-size:.85rem;font-family:inherit;resize:vertical;min-height:70px;
+  outline:none;transition:border-color .2s;}
+.ai-input:focus{border-color:var(--primary);}
+.ai-btn{background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:10px 18px;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap;
+  transition:background .2s;display:flex;align-items:center;gap:6px;}
+.ai-btn:hover{background:var(--primary-hover);}
+.ai-btn:disabled{opacity:.5;cursor:wait;}
+.sample-link{font-size:.75rem;color:var(--accent);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;}
 
 /* ── Form ── */
-.form-group{margin-bottom:16px;}
-label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
-input,select,textarea{
-  width:100%;background:var(--surface2);border:1px solid var(--border);
-  border-radius:10px;padding:10px 13px;color:var(--text);font-family:'Inter',sans-serif;
-  font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s;
-}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(63,185,80,.15);}
-textarea{resize:vertical;min-height:85px;}
-select option{background:#21262d;}
+.form-group{margin-bottom:14px;}
+label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);
+  margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+input,select,textarea{width:100%;background:#fff;border:1px solid var(--border2);
+  border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:inherit;
+  font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,107,76,.1);}
+textarea{resize:vertical;min-height:90px;}
+select{cursor:pointer;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:500px){.form-row{grid-template-columns:1fr;}}
 
-/* ── Issue type chips ── */
-.issue-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
-.chip{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;
-  padding:9px 11px;cursor:pointer;transition:all .2s;font-size:.8rem;font-weight:500;
-  display:flex;align-items:center;gap:8px;color:var(--muted);}
-.chip:hover{border-color:var(--accent);color:var(--text);}
-.chip.active{background:rgba(63,185,80,.1);border-color:var(--accent);color:var(--accent);}
-.chip-icon{font-size:1rem;}
+/* ── Issue type cards ── */
+.issue-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+@media(max-width:500px){.issue-grid{grid-template-columns:1fr 1fr;}}
+.issue-card{background:#fff;border:2px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 8px;cursor:pointer;transition:all .15s;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:4px;}
+.issue-card:hover{border-color:var(--accent);background:var(--primary-light);}
+.issue-card.active{border-color:var(--primary);background:var(--primary-light);}
+.issue-card .ic-icon{font-size:1.3rem;}
+.issue-card .ic-label{font-size:.72rem;font-weight:600;color:var(--muted);line-height:1.2;}
+.issue-card.active .ic-label{color:var(--primary);}
 
-/* ── Recipient Quick Picks ── */
-.quick-recipients{display:flex;gap:6px;margin-top:6px;}
-.quick-rec-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:.72rem;padding:3px 8px;border-radius:6px;cursor:pointer;}
-.quick-rec-btn:hover{color:var(--text);border-color:var(--accent2);}
+/* ── Quick recipients ── */
+.quick-recipients{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.qr-btn{background:#fff;border:1px solid var(--border2);color:var(--muted);font-size:.73rem;
+  padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .15s;}
+.qr-btn:hover{color:var(--primary);border-color:var(--accent);background:var(--primary-light);}
 
 /* ── Buttons ── */
-.btn-row{display:flex;gap:10px;margin-top:4px;}
-.btn{padding:12px 20px;border-radius:10px;font-weight:600;font-size:.88rem;
-  cursor:pointer;border:none;transition:all .2s;flex:1;}
-.btn-primary{background:linear-gradient(135deg,#2ea043,#3fb950);color:#fff;}
-.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(63,185,80,.4);}
-.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text);}
-.btn-secondary:hover{border-color:var(--accent2);color:var(--accent2);}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;}
+.btn-row{display:flex;gap:10px;margin-top:8px;}
+.btn{padding:12px 20px;border-radius:var(--radius-sm);font-weight:600;font-size:.9rem;
+  cursor:pointer;border:none;transition:all .2s;flex:1;display:flex;align-items:center;
+  justify-content:center;gap:8px;}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-hover);box-shadow:0 2px 12px rgba(26,107,76,.25);}
+.btn-secondary{background:#fff;border:1px solid var(--border2);color:var(--text);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--primary);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── Status ── */
+.status{display:none;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius-sm);
+  margin-top:12px;font-size:.85rem;font-weight:500;}
+.status.success{background:var(--primary-light);color:var(--primary);}
+.status.error{background:var(--danger-light);color:var(--danger);}
+.status.loading{background:#eef4fb;color:#1a6b4c;}
+.spinner{width:14px;height:14px;border:2px solid #b0d4c0;border-top-color:var(--primary);
+  border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── Preview panel ── */
-.preview-area{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
-  min-height:520px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;}
-.preview-placeholder{text-align:center;color:var(--muted);}
-.preview-placeholder .big-icon{font-size:3.5rem;margin-bottom:12px;}
-.preview-placeholder p{font-size:.88rem;}
-#previewFrame{width:100%;height:620px;border:none;border-radius:12px;display:none;}
+.preview-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;height:fit-content;
+  position:sticky;top:90px;}
+.preview-header{padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+.preview-header .title{font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:8px;}
+.preview-placeholder{padding:60px 20px;text-align:center;color:var(--muted2);}
+.preview-placeholder .ph-icon{font-size:3rem;margin-bottom:12px;}
+.preview-placeholder .ph-text{font-size:.9rem;}
+.preview-frame{width:100%;height:600px;border:none;display:none;background:#f0f0f0;}
+@media(max-width:900px){.preview-frame{height:500px;}.preview-wrap{position:static;}}
 
-/* ── Signature Badge ── */
-.sig-badge{
-  background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);border-radius:10px;
-  padding:10px 14px;font-size:.78rem;color:var(--accent2);display:flex;align-items:center;gap:10px;margin-bottom:16px;
-}
-.sig-badge span{font-weight:700;}
-
-/* ── Status bar ── */
-.status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;
-  font-size:.82rem;margin-top:16px;display:none;}
-.status.success{background:rgba(63,185,80,.1);border:1px solid var(--accent);color:var(--accent);}
-.status.error{background:rgba(247,129,102,.1);border:1px solid var(--accent3);color:var(--accent3);}
-.status.loading{background:rgba(88,166,255,.1);border:1px solid var(--accent2);color:var(--accent2);}
-
-/* ── Records table ── */
-.records{margin-top:24px;}
-.records-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+/* ── Records ── */
+.records-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
+.records-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .records-title{font-size:.88rem;font-weight:700;color:var(--text);}
-.clear-btn{font-size:.75rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;}
-.clear-btn:hover{color:var(--accent3);}
-table{width:100%;border-collapse:collapse;font-size:.78rem;}
-th{color:var(--muted);font-weight:600;padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);}
-td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.5);color:var(--text);}
-tr:hover td{background:rgba(33,38,45,.6);}
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600;}
-.tag-fin{background:rgba(212,168,72,.15);color:var(--gold);}
-.tag-health{background:rgba(247,129,102,.15);color:var(--accent3);}
-.tag-edu{background:rgba(88,166,255,.15);color:var(--accent2);}
-.tag-gen{background:rgba(139,148,158,.15);color:var(--muted);}
-.tag-death{background:rgba(180,100,100,.15);color:#f08080;}
-.tag-job{background:rgba(63,185,80,.15);color:var(--accent);}
-.dl-link{color:var(--accent2);cursor:pointer;text-decoration:underline;background:none;border:none;font-size:.78rem;}
+.records-clear{font-size:.75rem;color:var(--danger);cursor:pointer;background:none;border:none;}
+.records-stats{display:flex;gap:16px;margin-bottom:12px;}
+.stat-box{background:var(--bg);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;}
+.stat-num{font-size:1.3rem;font-weight:700;color:var(--primary);}
+.stat-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.records-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.records-table th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:600;
+  border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase;}
+.records-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+.records-table tr:hover{background:var(--bg);}
+.tag{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600;}
+.tag-fin{background:#fff3cd;color:#8a6d0b;}
+.tag-health{background:#fde8e8;color:#c0392b;}
+.tag-edu{background:#e3f2fd;color:#1565c0;}
+.tag-gen{background:#f0f0f0;color:#666;}
+.tag-death{background:#e8e0f0;color:#6a3d9a;}
+.tag-job{background:#e8f5e9;color:#2e7d32;}
+.re-dl{color:var(--primary);cursor:pointer;font-size:.78rem;font-weight:600;background:none;border:none;}
+.empty-records{text-align:center;padding:20px;color:var(--muted2);font-size:.82rem;}
 
-/* ── Spinner ── */
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner{width:16px;height:16px;border:2px solid transparent;border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-
-/* ── Stats row ── */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
-.stat-num{font-size:1.7rem;font-weight:800;color:var(--accent);}
-.stat-label{font-size:.7rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.05em;}
+/* ── Footer ── */
+.footer{text-align:center;padding:20px;font-size:.75rem;color:var(--muted2);}
 </style>
 </head>
 <body>
 
+<!-- Header -->
 <div class="header">
-  <div class="header-icon">🕌</div>
+  <div class="header-logo">SK</div>
   <div>
-    <div class="header-title">SKSSF Letter Automation</div>
-    <div class="header-sub">Valachil Padavu Committee — Samastha Kendriya Sunni Students Federation</div>
+    <div class="header-title">SKSSF Letter Generator</div>
+    <div class="header-sub">Valachil Padavu Unit — Official Letter Automation</div>
   </div>
-  <div class="header-badge"><span>✍️ Pre-Signed</span> | <span>🤖 AI Assistant</span></div>
+  <div class="header-badge">⚡ AI-Powered</div>
 </div>
 
 <div class="container">
+  <!-- LEFT: Form Panel -->
+  <div class="panel">
+    <div class="panel-title"><span class="icon">📝</span> Letter Details</div>
 
-  <!-- LEFT: FORM & AI -->
-  <div>
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat-card"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Letters Generated</div></div>
-      <div class="stat-card"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today</div></div>
-      <div class="stat-card"><div class="stat-num" id="statTypes">6</div><div class="stat-label">Issue Types</div></div>
-    </div>
-
-    <!-- AI Assistant Box -->
+    <!-- AI Box -->
     <div class="ai-box">
-      <div class="ai-title">🤖 AI Smart Auto-Draft & Issue Parser</div>
-      <div class="ai-desc">Paste or type any raw situation (e.g. medical diagnosis, financial condition, or rough notes). AI will automatically extract details and draft a formal recommendation letter!</div>
+      <div class="ai-title">🤖 AI Assistant — Describe the Situation</div>
+      <div class="ai-desc">Type or paste a description of the person's situation. The AI will extract name, address, issue type and draft a formal letter note automatically.</div>
       <div class="ai-input-row">
-        <input type="text" class="ai-input" id="aiInput" placeholder="e.g. Ruksana resident of Valachil Padavu married woman stone in uterus..."/>
-        <button class="ai-btn" onclick="parseWithAI()">✨ Auto Fill</button>
+        <textarea class="ai-input" id="aiInput" placeholder="e.g. Ruksana, wife of Mohammed, resident of Valachil Padavu. She had severe stomach pain, diagnosed with stone in uterus at Father Muller Hospital. Treatment cost 3 lakh rupees. Family is very poor."></textarea>
       </div>
-      <span class="sample-tag" onclick="loadSampleText()">Load Sample: Ruksana (Medical Case)</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+        <button class="ai-btn" id="aiBtn" onclick="parseWithAI()">✨ Auto-Fill with AI</button>
+        <span class="sample-link" onclick="loadSample()">Try a sample</span>
+      </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title"><span>✍️</span> Fill Letter Details</div>
-
-      <!-- Pre-built signature indicator -->
-      <div class="sig-badge">
-        <span style="font-size:1.1rem;">✍️</span>
-        <div>
-          <span>Pre-Built Signature Active:</span> Ibrahim Kaleel (G. Secretary) signature & Official Stamp will be automatically stamped on the generated PDF.
-        </div>
-      </div>
-
-      <!-- Recipient -->
-      <div class="form-group">
-        <label>Recipient / Addressing To</label>
-        <input type="text" id="recipient" value="The Concerned Authority"/>
-        <div class="quick-recipients">
-          <span style="font-size:.7rem;color:var(--muted)">Quick Select:</span>
-          <button class="quick-rec-btn" onclick="setRecipient('The Concerned Authority')">Concerned Authority</button>
-          <button class="quick-rec-btn" onclick="setRecipient('SKSSF Sahachari\nKendra Samithi')">SKSSF Sahachari Kendra Samithi</button>
-        </div>
-      </div>
-
-      <!-- Issue type -->
+    <!-- Issue Type -->
+    <div class="form-group">
       <label>Issue Type</label>
-      <div class="issue-chips" id="issueChips">
-        <div class="chip active" data-val="financial"><span class="chip-icon">💰</span>Financial Assistance</div>
-        <div class="chip" data-val="health"><span class="chip-icon">🏥</span>Health / Medical</div>
-        <div class="chip" data-val="education"><span class="chip-icon">📚</span>Education / Scholarship</div>
-        <div class="chip" data-val="general"><span class="chip-icon">📄</span>General Recommendation</div>
-        <div class="chip" data-val="death_benefit"><span class="chip-icon">🕊️</span>Death Benefit</div>
-        <div class="chip" data-val="job"><span class="chip-icon">💼</span>Employment / Job</div>
+      <div class="issue-grid">
+        <div class="issue-card" data-val="financial"><span class="ic-icon">💰</span><span class="ic-label">Financial</span></div>
+        <div class="issue-card active" data-val="health"><span class="ic-icon">🏥</span><span class="ic-label">Health</span></div>
+        <div class="issue-card" data-val="education"><span class="ic-icon">📚</span><span class="ic-label">Education</span></div>
+        <div class="issue-card" data-val="death_benefit"><span class="ic-icon">🕊️</span><span class="ic-label">Death Benefit</span></div>
+        <div class="issue-card" data-val="job"><span class="ic-icon">💼</span><span class="ic-label">Job Support</span></div>
+        <div class="issue-card" data-val="general"><span class="ic-icon">📄</span><span class="ic-label">General</span></div>
       </div>
-      <input type="hidden" id="issueType" value="financial"/>
+      <input type="hidden" id="issueType" value="health"/>
+    </div>
 
-      <!-- Person details -->
+    <!-- Person details -->
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="name" placeholder="e.g. Mohammed Ashraf K" required/>
+    </div>
+    <div class="form-row">
       <div class="form-group">
-        <label>Full Name *</label>
-        <input type="text" id="name" placeholder="e.g. Ruksana / Mohammed Ashraf K" required/>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label>Relation</label>
-          <select id="relation">
-            <option value="S/o">S/o (Son of)</option>
-            <option value="D/o">D/o (Daughter of)</option>
-            <option value="W/o">W/o (Wife of)</option>
-            <option value="H/o">H/o (Husband of)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Parent / Guardian Name</label>
-          <input type="text" id="guardian" placeholder="Father / Husband name"/>
-        </div>
+        <label>Relation</label>
+        <select id="relation">
+          <option value="S/o">S/o (Son of)</option>
+          <option value="D/o">D/o (Daughter of)</option>
+          <option value="W/o">W/o (Wife of)</option>
+          <option value="H/o">H/o (Husband of)</option>
+        </select>
       </div>
       <div class="form-group">
-        <label>Address / Residence</label>
-        <input type="text" id="address" placeholder="e.g. Valachil Padavu, Mangalore"/>
+        <label>Parent / Guardian</label>
+        <input type="text" id="guardian" placeholder="Father / Husband name"/>
       </div>
+    </div>
+    <div class="form-group">
+      <label>Address / Residence</label>
+      <input type="text" id="address" placeholder="e.g. Valachil Padavu, Mangalore"/>
+    </div>
+    <div class="form-row">
       <div class="form-group">
         <label>Date</label>
         <input type="date" id="date"/>
       </div>
       <div class="form-group">
-        <label>Specific Situation / Details <span style="color:var(--muted)">(Note body)</span></label>
-        <textarea id="customNote" placeholder="Describe the specific situation, hospital cost, medical diagnosis, financial background, etc."></textarea>
+        <label>Recipient</label>
+        <input type="text" id="recipient" placeholder="The Concerned Authority"/>
       </div>
-
-      <div class="btn-row">
-        <button class="btn btn-secondary" onclick="previewLetter()">👁 Preview</button>
-        <button class="btn btn-primary" id="genBtn" onclick="generateLetter()">⬇ Download PDF</button>
-      </div>
-      <div class="status" id="status"></div>
     </div>
+    <div class="quick-recipients">
+      <span class="qr-btn" onclick="setRecipient('SKSSF Sahachari\nKendra Samithi')">SKSSF Sahachari Kendra</span>
+      <span class="qr-btn" onclick="setRecipient('The President\nSKSSF Central Committee')">SKSSF President</span>
+      <span class="qr-btn" onclick="setRecipient('DCO Office\nMangalore')">DCO Office Mangalore</span>
+      <span class="qr-btn" onclick="setRecipient('')">Clear</span>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label>Custom Note / Situation Details</label>
+      <textarea id="customNote" placeholder="Describe the situation in detail — medical condition, financial hardship, etc. The AI will draft this for you."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="previewLetter()">👁️ Preview</button>
+      <button class="btn btn-primary" id="genBtn" onclick="generateLetter()">📄 Generate & Download</button>
+    </div>
+
+    <div class="status" id="status"></div>
 
     <!-- Records -->
-    <div class="records panel">
+    <div class="records-section">
       <div class="records-header">
-        <div class="records-title">📋 Generated Letters</div>
-        <button class="clear-btn" onclick="clearRecords()">Clear History</button>
+        <div class="records-title">📋 Recent Letters</div>
+        <button class="records-clear" onclick="clearRecords()">Clear All</button>
       </div>
-      <table id="recordsTable">
-        <thead><tr><th>#</th><th>Name</th><th>Type</th><th>Date</th><th>Action</th></tr></thead>
-        <tbody id="recordsBody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px;">No letters generated yet.</td></tr></tbody>
-      </table>
+      <div class="records-stats">
+        <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total</div></div>
+        <div class="stat-box"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today</div></div>
+      </div>
+      <div id="recordsBody"></div>
     </div>
   </div>
 
-  <!-- RIGHT: PREVIEW -->
-  <div>
-    <div class="panel">
-      <div class="panel-title"><span>📜</span> Letter Preview</div>
-      <div class="preview-area" id="previewArea">
-        <div class="preview-placeholder" id="previewPlaceholder">
-          <div class="big-icon">📋</div>
-          <p>Fill the form or use AI Auto-Fill and click<br/><strong>Preview</strong> to see the letter</p>
-        </div>
-        <iframe id="previewFrame" title="PDF Preview"></iframe>
-      </div>
-      <div style="margin-top:12px;font-size:.75rem;color:var(--muted);text-align:center;">
-        Preview shows actual PDF with official letterhead, stamp & Ibrahim Kaleel signature
-      </div>
+  <!-- RIGHT: Preview Panel -->
+  <div class="preview-wrap">
+    <div class="preview-header">
+      <div class="title"><span>👁️</span> Live Preview</div>
+      <span style="font-size:.75rem;color:var(--muted);" id="previewInfo"></span>
     </div>
-
-    <!-- Info card -->
-    <div class="panel" style="margin-top:20px;">
-      <div class="panel-title"><span>ℹ️</span> Pipeline Info</div>
-      <div style="font-size:.82rem;color:var(--muted);line-height:1.8;">
-        <div>🔹 <strong style="color:var(--text)">Letterhead:</strong> SKSSF Valachil Padavu Committee</div>
-        <div>🔹 <strong style="color:var(--text)">Stamp:</strong> Reg. No. 5342 (Auto Stamped)</div>
-        <div>🔹 <strong style="color:var(--text)">Pre-Built Signature:</strong> Ibrahim Kaleel (G. Secretary)</div>
-        <div>🔹 <strong style="color:var(--text)">Format:</strong> A4 PDF, print-ready</div>
-        <div>🔹 <strong style="color:var(--text)">AI Auto-Writer:</strong> Extracts key facts & formats formal recommendation letter</div>
-      </div>
+    <div class="preview-placeholder" id="previewPlaceholder">
+      <div class="ph-icon">📄</div>
+      <div class="ph-text">Fill the form and click Preview to see the letter</div>
     </div>
+    <iframe class="preview-frame" id="previewFrame"></iframe>
   </div>
+</div>
 
+<div class="footer">
+  SKSSF Valachil Padavu Unit — Letter Automation v2<br/>
+  Generated letters include official letterhead & signature
 </div>
 
 <script>
 // ── State ──
 let records = JSON.parse(localStorage.getItem('skssf_records') || '[]');
 let today = new Date().toISOString().split('T')[0];
-
 document.getElementById('date').value = today;
 
-// ── Issue chip selection ──
-document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    selectChip(chip.dataset.val);
-  });
+// ── Issue card selection ──
+document.querySelectorAll('.issue-card').forEach(card => {
+  card.addEventListener('click', () => selectCard(card.dataset.val));
 });
 
-function selectChip(val) {
-  document.querySelectorAll('.chip').forEach(c => {
-    if (c.dataset.val === val) c.classList.add('active');
-    else c.classList.remove('active');
+function selectCard(val) {
+  document.querySelectorAll('.issue-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === val);
   });
   document.getElementById('issueType').value = val;
 }
@@ -321,10 +305,14 @@ async function parseWithAI() {
   const text = document.getElementById('aiInput').value.trim();
   if (!text) { showStatus('Please enter some text in the AI box.', 'error'); return; }
 
-  showStatus('AI is analyzing the situation text...', 'loading');
+  const btn = document.getElementById('aiBtn');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Analyzing...';
+  showStatus('AI is analyzing the situation...', 'loading');
+
   try {
     const res = await fetch('/ai_parse', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({text})
     });
     const data = await res.json();
@@ -333,19 +321,25 @@ async function parseWithAI() {
       if (e.name) document.getElementById('name').value = e.name;
       if (e.address) document.getElementById('address').value = e.address;
       if (e.relation) document.getElementById('relation').value = e.relation;
-      if (e.issue_type) selectChip(e.issue_type);
+      if (e.guardian) document.getElementById('guardian').value = e.guardian;
+      if (e.issue_type) selectCard(e.issue_type);
       if (e.custom_note) document.getElementById('customNote').value = e.custom_note;
 
       showStatus('✨ AI filled the fields & drafted the letter!', 'success');
       previewLetter();
+    } else if (data.error) {
+      showStatus('AI error: ' + data.error, 'error');
     }
   } catch(err) {
     showStatus('AI parse failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ Auto-Fill with AI';
   }
 }
 
-function loadSampleText() {
-  document.getElementById('aiInput').value = "Ruksana is the resident of Valachil Padavu. She is a married woman started stomach pain. She was diagnosed and admitted for stone in the uterus and womb. She was admitted in Father Muller hospital. It costed more than 3 Lakh rupees. Their financial background is very weak.";
+function loadSample() {
+  document.getElementById('aiInput').value = "Ruksana, wife of Mohammed, resident of Valachil Padavu. She is a married woman who started having severe stomach pain. She was diagnosed and admitted for stone in the uterus and womb at Father Muller Hospital. The medical treatment costed more than 3 Lakh rupees. Their financial background is very weak.";
   setRecipient("SKSSF Sahachari\nKendra Samithi");
   parseWithAI();
 }
@@ -378,7 +372,7 @@ function showStatus(msg, type) {
   el.innerHTML = type === 'loading'
     ? `<div class="spinner"></div> ${msg}`
     : `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
-  if (type !== 'loading') setTimeout(() => el.style.display='none', 4000);
+  if (type !== 'loading') setTimeout(() => el.style.display = 'none', 4000);
 }
 
 // ── Preview ──
@@ -388,7 +382,7 @@ async function previewLetter() {
   showStatus('Generating preview...', 'loading');
   try {
     const res = await fetch('/preview', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error(await res.text());
@@ -398,6 +392,7 @@ async function previewLetter() {
     const frame = document.getElementById('previewFrame');
     frame.src = url;
     frame.style.display = 'block';
+    document.getElementById('previewInfo').textContent = `${data.name} — ${data.issue_type}`;
     document.getElementById('status').style.display = 'none';
   } catch(e) {
     showStatus('Preview failed: ' + e.message, 'error');
@@ -410,10 +405,10 @@ async function generateLetter() {
   if (!validate(data)) return;
   const btn = document.getElementById('genBtn');
   btn.disabled = true;
-  showStatus('Generating PDF with pre-built signature...', 'loading');
+  showStatus('Generating PDF...', 'loading');
   try {
     const res = await fetch('/generate', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
     if (!res.ok) throw new Error(await res.text());
@@ -421,11 +416,11 @@ async function generateLetter() {
     const url  = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const slug = data.name.replace(/\s+/g,'_');
-    a.download = `SKSSF_Letter_${slug}_${today.replace(/-/g,'')}.pdf`;
+    const slug = data.name.replace(/\s+/g, '_');
+    a.download = `SKSSF_Letter_${slug}_${today.replace(/-/g, '')}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
-    showStatus('PDF downloaded successfully with signature!', 'success');
+    showStatus('✅ PDF downloaded successfully!', 'success');
     addRecord(data);
   } catch(e) {
     showStatus('Generation failed: ' + e.message, 'error');
@@ -436,12 +431,12 @@ async function generateLetter() {
 
 // ── Records ──
 const TYPE_TAGS = {
-  financial:'<span class="tag tag-fin">💰 Financial</span>',
-  health:'<span class="tag tag-health">🏥 Health</span>',
-  education:'<span class="tag tag-edu">📚 Education</span>',
-  general:'<span class="tag tag-gen">📄 General</span>',
-  death_benefit:'<span class="tag tag-death">🕊️ Death Benefit</span>',
-  job:'<span class="tag tag-job">💼 Job</span>',
+  financial:    '<span class="tag tag-fin">💰 Financial</span>',
+  health:       '<span class="tag tag-health">🏥 Health</span>',
+  education:    '<span class="tag tag-edu">📚 Education</span>',
+  general:      '<span class="tag tag-gen">📄 General</span>',
+  death_benefit:'<span class="tag tag-death">🕊️ Death</span>',
+  job:          '<span class="tag tag-job">💼 Job</span>',
 };
 
 function addRecord(data) {
@@ -451,43 +446,50 @@ function addRecord(data) {
 }
 
 function renderRecords() {
-  const tbody = document.getElementById('recordsBody');
+  const container = document.getElementById('recordsBody');
   const todayRecords = records.filter(r => r.ts.startsWith(today));
   document.getElementById('statTotal').textContent = records.length;
   document.getElementById('statToday').textContent = todayRecords.length;
-  if (!records.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px;">No letters generated yet.</td></tr>';
+
+  if (records.length === 0) {
+    container.innerHTML = '<div class="empty-records">No letters generated yet</div>';
     return;
   }
-  tbody.innerHTML = records.slice(0,10).map((r,i) => `
-    <tr>
-      <td>${i+1}</td>
-      <td><strong>${r.name}</strong><br/><span style="color:var(--muted);font-size:.75rem">${r.relation} ${r.guardian || ''}</span></td>
-      <td>${TYPE_TAGS[r.issue_type] || r.issue_type}</td>
-      <td>${r.date || '—'}</td>
-      <td><button class="dl-link" onclick="regenAndDownload(${i})">Re-download</button></td>
-    </tr>`).join('');
+
+  const recent = records.slice(0, 10);
+  container.innerHTML = `
+    <table class="records-table">
+      <thead><tr><th>Name</th><th>Type</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        ${recent.map((r, i) => `
+          <tr>
+            <td>${r.name}</td>
+            <td>${TYPE_TAGS[r.issue_type] || r.issue_type}</td>
+            <td style="color:var(--muted);font-size:.75rem;">${r.date || '—'}</td>
+            <td><button class="re-dl" onclick="regenAndDownload(${i})">Re-download</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
 }
 
 async function regenAndDownload(idx) {
   const data = records[idx];
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
   try {
     const res = await fetch('/generate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `SKSSF_Letter_${data.name.replace(/\s+/g,'_')}.pdf`;
+    a.href = url; a.download = `SKSSF_Letter_${data.name.replace(/\s+/g, '_')}.pdf`;
     a.click(); URL.revokeObjectURL(url);
-  } finally { btn.disabled = false; }
+  } catch(e) { showStatus('Re-download failed: ' + e.message, 'error'); }
 }
 
 function clearRecords() {
-  if (!confirm('Clear all history?')) return;
+  if (!confirm('Clear all letter history?')) return;
   records = []; localStorage.removeItem('skssf_records'); renderRecords();
 }
 
