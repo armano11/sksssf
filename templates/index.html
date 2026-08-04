@@ -2,192 +2,172 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SKSSF Letter Generator — Valachil Padavu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+<meta name="theme-color" content="#1a6b4c"/>
+<title>SKSSF Letter Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#f5f6f8;--surface:#ffffff;--border:#e0e3e8;--border2:#cdd2d8;
+  --bg:#f0f2f5;--surface:#fff;--border:#e0e3e8;--border2:#cdd2d8;
   --text:#1a2332;--muted:#6b7785;--muted2:#9aa5b1;
   --primary:#1a6b4c;--primary-hover:#155a3f;--primary-light:#e8f5ef;
   --accent:#2d7a5f;--danger:#c0392b;--danger-light:#fdf0ee;
-  --shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 4px 20px rgba(0,0,0,.08);
+  --shadow:0 1px 3px rgba(0,0,0,.06);
   --radius:12px;--radius-sm:8px;
 }
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
 
-/* ── Header ── */
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;
-  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
-.header-logo{width:44px;height:44px;background:var(--primary);border-radius:10px;
-  display:grid;place-items:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;}
-.header-title{font-size:1.15rem;font-weight:700;color:var(--text);}
-.header-sub{font-size:.78rem;color:var(--muted);margin-top:1px;}
-.header-badge{margin-left:auto;background:var(--primary-light);color:var(--primary);
-  padding:5px 14px;border-radius:20px;font-size:.75rem;font-weight:600;}
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.header-logo{width:40px;height:40px;background:var(--primary);border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;}
+.header-title{font-size:1.05rem;font-weight:700;}
+.header-sub{font-size:.72rem;color:var(--muted);margin-top:1px;}
+.header-badge{margin-left:auto;background:var(--primary-light);color:var(--primary);padding:4px 10px;border-radius:20px;font-size:.68rem;font-weight:600;white-space:nowrap;}
 
-/* ── Layout ── */
-.container{max-width:1200px;margin:0 auto;padding:24px 20px;
-  display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-@media(max-width:900px){.container{grid-template-columns:1fr;}}
+/* Layout */
+.container{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:900px){.container{grid-template-columns:1fr 1fr;padding:24px;gap:24px;}.preview-wrap{position:sticky;top:80px;}}
 
-/* ── Panels ── */
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:24px;box-shadow:var(--shadow);}
-.panel-title{font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-.panel-title .icon{font-size:1.15rem;}
+/* Panels */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);}
+@media(min-width:600px){.panel{padding:24px;}}
+.panel-title{font-size:.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 
-/* ── AI Box ── */
-.ai-box{background:var(--primary-light);border:1px solid #b8dcc8;border-radius:var(--radius);
-  padding:18px;margin-bottom:20px;}
-.ai-title{font-size:.9rem;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.ai-desc{font-size:.8rem;color:var(--muted);margin-bottom:12px;line-height:1.45;}
-.ai-input-row{display:flex;gap:8px;}
-.ai-input{flex:1;background:#fff;border:1px solid var(--border2);border-radius:var(--radius-sm);
-  padding:10px 12px;color:var(--text);font-size:.85rem;font-family:inherit;resize:vertical;min-height:70px;
-  outline:none;transition:border-color .2s;}
+/* AI Box */
+.ai-box{background:var(--primary-light);border:1px solid #b8dcc8;border-radius:var(--radius);padding:14px;margin-bottom:16px;}
+@media(min-width:600px){.ai-box{padding:18px;}}
+.ai-title{font-size:.85rem;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.ai-desc{font-size:.76rem;color:var(--muted);margin-bottom:10px;line-height:1.4;}
+.ai-input{width:100%;background:#fff;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:.84rem;font-family:inherit;resize:vertical;min-height:64px;outline:none;transition:border-color .2s;}
 .ai-input:focus{border-color:var(--primary);}
-.ai-btn{background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);
-  padding:10px 18px;font-weight:600;font-size:.85rem;cursor:pointer;white-space:nowrap;
-  transition:background .2s;display:flex;align-items:center;gap:6px;}
+.ai-btn{margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 16px;font-weight:600;font-size:.84rem;cursor:pointer;white-space:nowrap;transition:background .2s;display:flex;align-items:center;gap:6px;width:100%;justify-content:center;}
+@media(min-width:600px){.ai-btn{width:auto;}}
 .ai-btn:hover{background:var(--primary-hover);}
 .ai-btn:disabled{opacity:.5;cursor:wait;}
-.sample-link{font-size:.75rem;color:var(--accent);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;}
+.sample-link{font-size:.72rem;color:var(--accent);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;}
 
-/* ── Form ── */
-.form-group{margin-bottom:14px;}
-label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);
-  margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
-input,select,textarea{width:100%;background:#fff;border:1px solid var(--border2);
-  border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:inherit;
-  font-size:.88rem;outline:none;transition:border-color .2s,box-shadow .2s;}
-input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,107,76,.1);}
-textarea{resize:vertical;min-height:90px;}
-select{cursor:pointer;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:500px){.form-row{grid-template-columns:1fr;}}
-
-/* ── Issue type cards ── */
-.issue-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
-@media(max-width:500px){.issue-grid{grid-template-columns:1fr 1fr;}}
-.issue-card{background:#fff;border:2px solid var(--border);border-radius:var(--radius-sm);
-  padding:10px 8px;cursor:pointer;transition:all .15s;text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:4px;}
+/* Issue type cards */
+.issue-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+@media(min-width:600px){.issue-grid{grid-template-columns:1fr 1fr 1fr;}}
+.issue-card{background:#fff;border:2px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;cursor:pointer;transition:all .15s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:64px;justify-content:center;}
+.issue-card:active{transform:scale(.97);}
 .issue-card:hover{border-color:var(--accent);background:var(--primary-light);}
 .issue-card.active{border-color:var(--primary);background:var(--primary-light);}
-.issue-card .ic-icon{font-size:1.3rem;}
-.issue-card .ic-label{font-size:.72rem;font-weight:600;color:var(--muted);line-height:1.2;}
+.issue-card .ic-icon{font-size:1.2rem;}
+.issue-card .ic-label{font-size:.68rem;font-weight:600;color:var(--muted);line-height:1.15;}
 .issue-card.active .ic-label{color:var(--primary);}
 
-/* ── Quick recipients ── */
-.quick-recipients{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.qr-btn{background:#fff;border:1px solid var(--border2);color:var(--muted);font-size:.73rem;
-  padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .15s;}
-.qr-btn:hover{color:var(--primary);border-color:var(--accent);background:var(--primary-light);}
+/* Form */
+.form-group{margin-bottom:12px;}
+label{display:block;font-size:.74rem;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+input,select,textarea{width:100%;background:#fff;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:inherit;font-size:.86rem;outline:none;transition:border-color .2s,box-shadow .2s;}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,107,76,.1);}
+textarea{resize:vertical;min-height:120px;}
+select{cursor:pointer;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:400px){.form-row{grid-template-columns:1fr;}}
 
-/* ── Buttons ── */
-.btn-row{display:flex;gap:10px;margin-top:8px;}
-.btn{padding:12px 20px;border-radius:var(--radius-sm);font-weight:600;font-size:.9rem;
-  cursor:pointer;border:none;transition:all .2s;flex:1;display:flex;align-items:center;
-  justify-content:center;gap:8px;}
+/* AI Fix button */
+.note-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.note-header label{margin-bottom:0;}
+.ai-fix-btn{background:#fff;border:1px solid var(--accent);color:var(--primary);font-size:.7rem;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:600;transition:all .15s;white-space:nowrap;}
+.ai-fix-btn:hover{background:var(--primary-light);}
+.ai-fix-btn:disabled{opacity:.5;cursor:wait;}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px;margin-top:8px;}
+.btn{padding:12px 16px;border-radius:var(--radius-sm);font-weight:600;font-size:.88rem;cursor:pointer;border:none;transition:all .2s;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;}
 .btn-primary{background:var(--primary);color:#fff;}
 .btn-primary:hover{background:var(--primary-hover);box-shadow:0 2px 12px rgba(26,107,76,.25);}
 .btn-secondary{background:#fff;border:1px solid var(--border2);color:var(--text);}
 .btn-secondary:hover{border-color:var(--accent);color:var(--primary);}
 .btn:disabled{opacity:.5;cursor:not-allowed;}
 
-/* ── Status ── */
-.status{display:none;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius-sm);
-  margin-top:12px;font-size:.85rem;font-weight:500;}
+/* Status */
+.status{display:none;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--radius-sm);margin-top:10px;font-size:.82rem;font-weight:500;}
 .status.success{background:var(--primary-light);color:var(--primary);}
 .status.error{background:var(--danger-light);color:var(--danger);}
 .status.loading{background:#eef4fb;color:#1a6b4c;}
-.spinner{width:14px;height:14px;border:2px solid #b0d4c0;border-top-color:var(--primary);
-  border-radius:50%;animation:spin .6s linear infinite;}
+.spinner{width:14px;height:14px;border:2px solid #b0d4c0;border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Preview panel ── */
-.preview-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;height:fit-content;
-  position:sticky;top:90px;}
-.preview-header{padding:14px 20px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;}
-.preview-header .title{font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:8px;}
-.preview-placeholder{padding:60px 20px;text-align:center;color:var(--muted2);}
-.preview-placeholder .ph-icon{font-size:3rem;margin-bottom:12px;}
-.preview-placeholder .ph-text{font-size:.9rem;}
-.preview-frame{width:100%;height:600px;border:none;display:none;background:#f0f0f0;}
-@media(max-width:900px){.preview-frame{height:500px;}.preview-wrap{position:static;}}
+/* Preview */
+.preview-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;height:fit-content;}
+.preview-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.preview-header .title{font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:6px;}
+.preview-placeholder{padding:40px 16px;text-align:center;color:var(--muted2);}
+.preview-placeholder .ph-icon{font-size:2.5rem;margin-bottom:8px;}
+.preview-placeholder .ph-text{font-size:.84rem;}
+.preview-frame{width:100%;height:500px;border:none;display:none;background:#f0f0f0;}
+@media(min-width:900px){.preview-frame{height:600px;}}
 
-/* ── Records ── */
-.records-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);}
-.records-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.records-title{font-size:.88rem;font-weight:700;color:var(--text);}
-.records-clear{font-size:.75rem;color:var(--danger);cursor:pointer;background:none;border:none;}
-.records-stats{display:flex;gap:16px;margin-bottom:12px;}
-.stat-box{background:var(--bg);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;}
-.stat-num{font-size:1.3rem;font-weight:700;color:var(--primary);}
-.stat-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.records-table{width:100%;border-collapse:collapse;font-size:.8rem;}
-.records-table th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:600;
-  border-bottom:1px solid var(--border);font-size:.72rem;text-transform:uppercase;}
-.records-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
-.records-table tr:hover{background:var(--bg);}
-.tag{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600;}
+/* Records */
+.records-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);}
+.records-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.records-title{font-size:.82rem;font-weight:700;}
+.records-clear{font-size:.72rem;color:var(--danger);cursor:pointer;background:none;border:none;}
+.records-stats{display:flex;gap:12px;margin-bottom:10px;}
+.stat-box{background:var(--bg);border-radius:var(--radius-sm);padding:6px 12px;text-align:center;flex:1;}
+.stat-num{font-size:1.2rem;font-weight:700;color:var(--primary);}
+.stat-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.records-list{max-height:300px;overflow-y:auto;}
+.record-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.78rem;}
+.record-item:last-child{border-bottom:none;}
+.record-name{font-weight:600;}
+.record-date{color:var(--muted);font-size:.72rem;}
+.re-dl{color:var(--primary);cursor:pointer;font-size:.74rem;font-weight:600;background:none;border:none;}
+.empty-records{text-align:center;padding:16px;color:var(--muted2);font-size:.78rem;}
+
+/* Tags */
+.tag{padding:2px 7px;border-radius:6px;font-size:.66rem;font-weight:600;white-space:nowrap;}
 .tag-fin{background:#fff3cd;color:#8a6d0b;}
 .tag-health{background:#fde8e8;color:#c0392b;}
 .tag-edu{background:#e3f2fd;color:#1565c0;}
 .tag-gen{background:#f0f0f0;color:#666;}
 .tag-death{background:#e8e0f0;color:#6a3d9a;}
-.tag-job{background:#e8f5e9;color:#2e7d32;}
-.re-dl{color:var(--primary);cursor:pointer;font-size:.78rem;font-weight:600;background:none;border:none;}
-.empty-records{text-align:center;padding:20px;color:var(--muted2);font-size:.82rem;}
+.tag-mar{background:#fce4ec;color:#c2185b;}
+.tag-other{background:#e8f5e9;color:#2e7d32;}
 
-/* ── Footer ── */
-.footer{text-align:center;padding:20px;font-size:.75rem;color:var(--muted2);}
+/* Footer */
+.footer{text-align:center;padding:16px;font-size:.72rem;color:var(--muted2);}
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
   <div class="header-logo">SK</div>
   <div>
     <div class="header-title">SKSSF Letter Generator</div>
-    <div class="header-sub">Valachil Padavu Unit — Official Letter Automation</div>
+    <div class="header-sub">Valachil Padavu Unit</div>
   </div>
-  <div class="header-badge">⚡ AI-Powered</div>
+  <div class="header-badge">AI-Powered</div>
 </div>
 
 <div class="container">
-  <!-- LEFT: Form Panel -->
   <div class="panel">
-    <div class="panel-title"><span class="icon">📝</span> Letter Details</div>
+    <div class="panel-title">📝 Letter Details</div>
 
     <!-- AI Box -->
     <div class="ai-box">
-      <div class="ai-title">🤖 AI Assistant — Describe the Situation</div>
-      <div class="ai-desc">Type or paste a description of the person's situation. The AI will extract name, address, issue type and draft a formal letter note automatically.</div>
-      <div class="ai-input-row">
-        <textarea class="ai-input" id="aiInput" placeholder="e.g. Ruksana, wife of Mohammed, resident of Valachil Padavu. She had severe stomach pain, diagnosed with stone in uterus at Father Muller Hospital. Treatment cost 3 lakh rupees. Family is very poor."></textarea>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-        <button class="ai-btn" id="aiBtn" onclick="parseWithAI()">✨ Auto-Fill with AI</button>
-        <span class="sample-link" onclick="loadSample()">Try a sample</span>
-      </div>
+      <div class="ai-title">🤖 Describe the Situation</div>
+      <div class="ai-desc">Type or paste details. AI will extract name, address, issue type and draft a formal 3-paragraph letter body.</div>
+      <textarea class="ai-input" id="aiInput" placeholder="e.g. Ruksana, wife of Mohammed, resident of Valachil Padavu. She had severe stomach pain, diagnosed with stone in uterus at Father Muller Hospital. Treatment cost 3 lakh rupees. Family is very poor, husband is daily wage worker."></textarea>
+      <button class="ai-btn" id="aiBtn" onclick="parseWithAI()">✨ Auto-Fill with AI</button>
+      <span class="sample-link" onclick="loadSample()">Try a sample</span>
     </div>
 
     <!-- Issue Type -->
     <div class="form-group">
       <label>Issue Type</label>
       <div class="issue-grid">
-        <div class="issue-card" data-val="financial"><span class="ic-icon">💰</span><span class="ic-label">Financial</span></div>
         <div class="issue-card active" data-val="health"><span class="ic-icon">🏥</span><span class="ic-label">Health</span></div>
+        <div class="issue-card" data-val="financial"><span class="ic-icon">💰</span><span class="ic-label">Financial</span></div>
         <div class="issue-card" data-val="education"><span class="ic-icon">📚</span><span class="ic-label">Education</span></div>
+        <div class="issue-card" data-val="marriage"><span class="ic-icon">💍</span><span class="ic-label">Marriage</span></div>
         <div class="issue-card" data-val="death_benefit"><span class="ic-icon">🕊️</span><span class="ic-label">Death Benefit</span></div>
-        <div class="issue-card" data-val="job"><span class="ic-icon">💼</span><span class="ic-label">Job Support</span></div>
         <div class="issue-card" data-val="general"><span class="ic-icon">📄</span><span class="ic-label">General</span></div>
+        <div class="issue-card" data-val="other" style="grid-column:span 2;"><span class="ic-icon">✨</span><span class="ic-label">Other (AI Custom)</span></div>
       </div>
       <input type="hidden" id="issueType" value="health"/>
     </div>
@@ -208,39 +188,32 @@ select{cursor:pointer;}
         </select>
       </div>
       <div class="form-group">
-        <label>Parent / Guardian</label>
+        <label>Guardian</label>
         <input type="text" id="guardian" placeholder="Father / Husband name"/>
       </div>
     </div>
     <div class="form-group">
-      <label>Address / Residence</label>
+      <label>Address</label>
       <input type="text" id="address" placeholder="e.g. Valachil Padavu, Mangalore"/>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="date"/>
-      </div>
-      <div class="form-group">
-        <label>Recipient</label>
-        <input type="text" id="recipient" placeholder="The Concerned Authority"/>
-      </div>
-    </div>
-    <div class="quick-recipients">
-      <span class="qr-btn" onclick="setRecipient('SKSSF Sahachari\nKendra Samithi')">SKSSF Sahachari Kendra</span>
-      <span class="qr-btn" onclick="setRecipient('The President\nSKSSF Central Committee')">SKSSF President</span>
-      <span class="qr-btn" onclick="setRecipient('DCO Office\nMangalore')">DCO Office Mangalore</span>
-      <span class="qr-btn" onclick="setRecipient('')">Clear</span>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="date"/>
     </div>
 
-    <div class="form-group" style="margin-top:14px;">
-      <label>Custom Note / Situation Details</label>
-      <textarea id="customNote" placeholder="Describe the situation in detail — medical condition, financial hardship, etc. The AI will draft this for you."></textarea>
+    <!-- Body (3 paragraphs) with AI Fix button -->
+    <div class="form-group">
+      <div class="note-header">
+        <label>Letter Body (3 paragraphs)</label>
+        <button class="ai-fix-btn" id="aiFixBtn" onclick="aiFixBody()">✨ AI Fix</button>
+      </div>
+      <textarea id="body" placeholder="Para 1: Introduction — name, place, marital status, condition&#10;&#10;Para 2: Details — hospital, diagnosis, treatment, expenses&#10;&#10;Para 3: Financial condition — income, employment, hardship&#10;&#10;AI will generate this for you, or click AI Fix to clean up rough text."></textarea>
     </div>
 
+    <!-- Buttons -->
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="previewLetter()">👁️ Preview</button>
-      <button class="btn btn-primary" id="genBtn" onclick="generateLetter()">📄 Generate & Download</button>
+      <button class="btn btn-primary" id="genBtn" onclick="generateLetter()">📄 Generate PDF</button>
     </div>
 
     <div class="status" id="status"></div>
@@ -249,42 +222,37 @@ select{cursor:pointer;}
     <div class="records-section">
       <div class="records-header">
         <div class="records-title">📋 Recent Letters</div>
-        <button class="records-clear" onclick="clearRecords()">Clear All</button>
+        <button class="records-clear" onclick="clearRecords()">Clear</button>
       </div>
       <div class="records-stats">
         <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total</div></div>
         <div class="stat-box"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today</div></div>
       </div>
-      <div id="recordsBody"></div>
+      <div class="records-list" id="recordsBody"></div>
     </div>
   </div>
 
-  <!-- RIGHT: Preview Panel -->
+  <!-- Preview -->
   <div class="preview-wrap">
     <div class="preview-header">
-      <div class="title"><span>👁️</span> Live Preview</div>
-      <span style="font-size:.75rem;color:var(--muted);" id="previewInfo"></span>
+      <div class="title">👁️ Live Preview</div>
+      <span style="font-size:.72rem;color:var(--muted);" id="previewInfo"></span>
     </div>
     <div class="preview-placeholder" id="previewPlaceholder">
       <div class="ph-icon">📄</div>
-      <div class="ph-text">Fill the form and click Preview to see the letter</div>
+      <div class="ph-text">Fill the form and tap Preview</div>
     </div>
     <iframe class="preview-frame" id="previewFrame"></iframe>
   </div>
 </div>
 
-<div class="footer">
-  SKSSF Valachil Padavu Unit — Letter Automation v2<br/>
-  Generated letters include official letterhead & signature
-</div>
+<div class="footer">SKSSF Valachil Padavu Unit — Letter Automation</div>
 
 <script>
-// ── State ──
 let records = JSON.parse(localStorage.getItem('skssf_records') || '[]');
 let today = new Date().toISOString().split('T')[0];
 document.getElementById('date').value = today;
 
-// ── Issue card selection ──
 document.querySelectorAll('.issue-card').forEach(card => {
   card.addEventListener('click', () => selectCard(card.dataset.val));
 });
@@ -296,20 +264,12 @@ function selectCard(val) {
   document.getElementById('issueType').value = val;
 }
 
-function setRecipient(val) {
-  document.getElementById('recipient').value = val;
-}
-
-// ── AI Parser ──
 async function parseWithAI() {
   const text = document.getElementById('aiInput').value.trim();
   if (!text) { showStatus('Please enter some text in the AI box.', 'error'); return; }
-
   const btn = document.getElementById('aiBtn');
-  btn.disabled = true;
-  btn.innerHTML = '⏳ Analyzing...';
+  btn.disabled = true; btn.innerHTML = '⏳ Analyzing...';
   showStatus('AI is analyzing the situation...', 'loading');
-
   try {
     const res = await fetch('/ai_parse', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -323,9 +283,8 @@ async function parseWithAI() {
       if (e.relation) document.getElementById('relation').value = e.relation;
       if (e.guardian) document.getElementById('guardian').value = e.guardian;
       if (e.issue_type) selectCard(e.issue_type);
-      if (e.custom_note) document.getElementById('customNote').value = e.custom_note;
-
-      showStatus('✨ AI filled the fields & drafted the letter!', 'success');
+      if (e.body) document.getElementById('body').value = e.body;
+      showStatus('✨ AI filled all fields & drafted the letter!', 'success');
       previewLetter();
     } else if (data.error) {
       showStatus('AI error: ' + data.error, 'error');
@@ -333,30 +292,56 @@ async function parseWithAI() {
   } catch(err) {
     showStatus('AI parse failed: ' + err.message, 'error');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '✨ Auto-Fill with AI';
+    btn.disabled = false; btn.innerHTML = '✨ Auto-Fill with AI';
+  }
+}
+
+async function aiFixBody() {
+  const text = document.getElementById('body').value.trim();
+  if (!text) { showStatus('Please write something in the body first.', 'error'); return; }
+  const btn = document.getElementById('aiFixBtn');
+  btn.disabled = true; btn.innerHTML = '⏳ Fixing...';
+  showStatus('AI is cleaning up the letter body...', 'loading');
+  try {
+    const res = await fetch('/ai_fix', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        text,
+        issue_type: document.getElementById('issueType').value,
+        name: document.getElementById('name').value
+      })
+    });
+    const data = await res.json();
+    if (data.fixed_body) {
+      document.getElementById('body').value = data.fixed_body;
+      showStatus('✨ Letter body cleaned up!', 'success');
+      previewLetter();
+    } else if (data.error) {
+      showStatus('AI fix error: ' + data.error, 'error');
+    }
+  } catch(err) {
+    showStatus('AI fix failed: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = '✨ AI Fix';
   }
 }
 
 function loadSample() {
-  document.getElementById('aiInput').value = "Ruksana, wife of Mohammed, resident of Valachil Padavu. She is a married woman who started having severe stomach pain. She was diagnosed and admitted for stone in the uterus and womb at Father Muller Hospital. The medical treatment costed more than 3 Lakh rupees. Their financial background is very weak.";
-  setRecipient("SKSSF Sahachari\nKendra Samithi");
+  document.getElementById('aiInput').value = "Ruksana, wife of Mohammed, resident of Valachil Padavu. She is a married woman who started having severe stomach pain. She was diagnosed and admitted for stone in the uterus and womb at Father Muller Hospital. The medical treatment costed more than 3 Lakh rupees. Their financial background is very weak. Husband works as daily wage worker.";
   parseWithAI();
 }
 
-// ── Collect form data ──
 function getFormData() {
   const dateVal = document.getElementById('date').value;
   const [y,m,d] = dateVal.split('-');
   return {
-    name:        document.getElementById('name').value.trim(),
-    relation:    document.getElementById('relation').value,
-    guardian:    document.getElementById('guardian').value.trim(),
-    address:     document.getElementById('address').value.trim(),
-    recipient:   document.getElementById('recipient').value.trim(),
-    issue_type:  document.getElementById('issueType').value,
-    custom_note: document.getElementById('customNote').value.trim(),
-    date:        dateVal ? `${d}/${m}/${y}` : '',
+    name: document.getElementById('name').value.trim(),
+    relation: document.getElementById('relation').value,
+    guardian: document.getElementById('guardian').value.trim(),
+    address: document.getElementById('address').value.trim(),
+    issue_type: document.getElementById('issueType').value,
+    body: document.getElementById('body').value.trim(),
+    date: dateVal ? `${d}/${m}/${y}` : '',
   };
 }
 
@@ -375,7 +360,6 @@ function showStatus(msg, type) {
   if (type !== 'loading') setTimeout(() => el.style.display = 'none', 4000);
 }
 
-// ── Preview ──
 async function previewLetter() {
   const data = getFormData();
   if (!validate(data)) return;
@@ -387,11 +371,10 @@ async function previewLetter() {
     });
     if (!res.ok) throw new Error(await res.text());
     const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     document.getElementById('previewPlaceholder').style.display = 'none';
     const frame = document.getElementById('previewFrame');
-    frame.src = url;
-    frame.style.display = 'block';
+    frame.src = url; frame.style.display = 'block';
     document.getElementById('previewInfo').textContent = `${data.name} — ${data.issue_type}`;
     document.getElementById('status').style.display = 'none';
   } catch(e) {
@@ -399,13 +382,11 @@ async function previewLetter() {
   }
 }
 
-// ── Generate & Download ──
 async function generateLetter() {
   const data = getFormData();
   if (!validate(data)) return;
   const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-  showStatus('Generating PDF...', 'loading');
+  btn.disabled = true; showStatus('Generating PDF...', 'loading');
   try {
     const res = await fetch('/generate', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -413,30 +394,26 @@ async function generateLetter() {
     });
     if (!res.ok) throw new Error(await res.text());
     const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const slug = data.name.replace(/\s+/g, '_');
-    a.download = `SKSSF_Letter_${slug}_${today.replace(/-/g, '')}.pdf`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showStatus('✅ PDF downloaded successfully!', 'success');
+    a.download = `SKSSF_Letter_${data.name.replace(/\s+/g, '_')}_${today.replace(/-/g, '')}.pdf`;
+    a.click(); URL.revokeObjectURL(url);
+    showStatus('✅ PDF downloaded!', 'success');
     addRecord(data);
   } catch(e) {
     showStatus('Generation failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+  } finally { btn.disabled = false; }
 }
 
-// ── Records ──
 const TYPE_TAGS = {
-  financial:    '<span class="tag tag-fin">💰 Financial</span>',
-  health:       '<span class="tag tag-health">🏥 Health</span>',
-  education:    '<span class="tag tag-edu">📚 Education</span>',
-  general:      '<span class="tag tag-gen">📄 General</span>',
+  financial:'<span class="tag tag-fin">💰 Financial</span>',
+  health:'<span class="tag tag-health">🏥 Health</span>',
+  education:'<span class="tag tag-edu">📚 Education</span>',
+  general:'<span class="tag tag-gen">📄 General</span>',
   death_benefit:'<span class="tag tag-death">🕊️ Death</span>',
-  job:          '<span class="tag tag-job">💼 Job</span>',
+  marriage:'<span class="tag tag-mar">💍 Marriage</span>',
+  other:'<span class="tag tag-other">✨ Other</span>',
 };
 
 function addRecord(data) {
@@ -450,27 +427,23 @@ function renderRecords() {
   const todayRecords = records.filter(r => r.ts.startsWith(today));
   document.getElementById('statTotal').textContent = records.length;
   document.getElementById('statToday').textContent = todayRecords.length;
-
   if (records.length === 0) {
     container.innerHTML = '<div class="empty-records">No letters generated yet</div>';
     return;
   }
-
-  const recent = records.slice(0, 10);
-  container.innerHTML = `
-    <table class="records-table">
-      <thead><tr><th>Name</th><th>Type</th><th>Date</th><th></th></tr></thead>
-      <tbody>
-        ${recent.map((r, i) => `
-          <tr>
-            <td>${r.name}</td>
-            <td>${TYPE_TAGS[r.issue_type] || r.issue_type}</td>
-            <td style="color:var(--muted);font-size:.75rem;">${r.date || '—'}</td>
-            <td><button class="re-dl" onclick="regenAndDownload(${i})">Re-download</button></td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>`;
+  const recent = records.slice(0, 15);
+  container.innerHTML = recent.map((r, i) => `
+    <div class="record-item">
+      <div>
+        <div class="record-name">${r.name}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+          ${TYPE_TAGS[r.issue_type] || r.issue_type}
+          <span class="record-date">${r.date || '—'}</span>
+        </div>
+      </div>
+      <button class="re-dl" onclick="regenAndDownload(${i})">Re-download</button>
+    </div>
+  `).join('');
 }
 
 async function regenAndDownload(idx) {

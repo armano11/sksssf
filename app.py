@@ -1,13 +1,22 @@
 """
-SKSSF Letter Automation Pipeline v3
+SKSSF Letter Automation Pipeline v4
 Generates official letters on the SKSSF Valachil Padavu Committee letterhead.
-- Fixed signature loading with fallback
-- Real AI parsing via Mistral API
-- Multi-issue: health, financial, education, death, marriage, general, other
-- "Other" type: AI generates custom subject + body
-- Fixed recipient (no UI field needed)
-- AI Fix button to clean up rough notes
-- Production-ready: gunicorn compatible, PORT env support
+
+Letter format (matches reference letter exactly):
+  [Letterhead - pre-printed]
+  Date: DD/MM/YYYY
+  To
+  [Recipient Name]
+  [Recipient Organization]
+  [Body - 4 paragraphs]
+  Para 1: Introduction (name, place, situation)
+  Para 2: Details (hospital/institution, diagnosis/issue, treatment, expenses)
+  Para 3: Financial condition (income, employment, hardship)
+  Para 4: Request for assistance (templated per issue type)
+  For SKSSF Valachil Padavu Unit
+  [Signature]
+  Ibrahim Kaleel
+  G. Secretary
 """
 import os
 import io
@@ -27,8 +36,11 @@ TEMPLATE_PDF = os.path.join(BASE_DIR, "S36BW-826073106590.pdf")
 OUTPUT_DIR = os.path.join(BASE_DIR, "generated")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ── Fixed recipient — same as shown in the reference letter ──
-DEFAULT_RECIPIENT = "To,\nThe Concerned Authority,"
+# ── Fixed recipient and signatory ──
+RECIPIENT = "To\nSKSSF Sahachari\nKendra Samithi"
+ORG_NAME = "SKSSF Valachil Padavu Unit"
+SIG_NAME = "Ibrahim Kaleel"
+SIG_DESIGNATION = "G. Secretary"
 
 # Signature — try multiple possible filenames, skip broken/placeholder files
 SIG_CANDIDATES = [
@@ -43,160 +55,61 @@ for candidate in SIG_CANDIDATES:
         break
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Letter templates for each issue type
-# Format matches the uploaded reference letter:
-#   To,\n<recipient>\n\nSub: <subject>\n\nRespected Sir/Madam,\n\n<body>\n\nThanking you,
+# Issue types and labels
 # ─────────────────────────────────────────────────────────────────────────────
 
-LETTER_TEMPLATES = {
-    "financial": """\
-To,
-The Concerned Authority,
-
-Sub: Financial Assistance for {name} – Humble Request
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {name}, {relation} of {guardian}, residing at {address}. We hereby certify that the said individual belongs to a genuinely financially distressed family in our locality.
-
-{custom_note}
-
-Due to unforeseen circumstances, the family has fallen into severe financial hardship and is unable to meet basic day-to-day needs. {name} has been a member of our community and is known for their honesty and integrity.
-
-We humbly request your good office to kindly extend all possible financial assistance and support to the above-mentioned individual at the earliest.
-
-We shall be highly obliged for your kind consideration.
-
-Thanking you,
-""",
-
-    "health": """\
-To,
-The Concerned Authority,
-
-Sub: Post-Treatment Medical Assistance for {name} – Request Letter
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, are writing this letter on behalf of {name}, {relation} of {guardian}, residing at {address}.
-
-{custom_note}
-
-The patient has undergone treatment and the family has incurred significant medical expenses. They are now in need of financial assistance to recover from the burden of these costs. The family lacks sufficient resources to cope with the situation. We verify that the above information is true to the best of our knowledge.
-
-We earnestly request your esteemed office to kindly render all possible support and medical assistance to the patient and their family in this difficult time.
-
-Thanking you,
-""",
-
-    "education": """\
-To,
-The Concerned Authority,
-
-Sub: Educational Assistance for {name} – Request Letter
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, humbly write this letter in support of {name}, {relation} of {guardian}, residing at {address}.
-
-{custom_note}
-
-The student is academically sincere and hardworking. However, due to the family's weak financial background, they are unable to continue their education without external support. We certify that all the above details are true and correct.
-
-We kindly request your good office to provide the necessary educational assistance or scholarship to enable the student to pursue their studies without financial burden.
-
-Thanking you,
-""",
-
-    "general": """\
-To,
-The Concerned Authority,
-
-Sub: Letter of Support / Recommendation for {name}
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, are pleased to forward this letter of recommendation on behalf of {name}, {relation} of {guardian}, residing at {address}.
-
-{custom_note}
-
-We have known the above-mentioned individual as a member of our local community. They are of good character and moral standing. We request your kind consideration and support in the above-mentioned matter.
-
-Thanking you,
-""",
-
-    "death_benefit": """\
-To,
-The Concerned Authority,
-
-Sub: Death Benefit / Bereavement Support for the Family of {name}
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, write this letter with deep sorrow to inform you about the demise of {name}, {relation} of {guardian}, who was a resident of {address}.
-
-{custom_note}
-
-Following the passing of {name}, the bereaved family is in a state of grief and financial hardship. We humbly request your office to extend the applicable death benefit and any other form of assistance to help the family during this difficult period.
-
-Thanking you,
-""",
-
-    "marriage": """\
-To,
-The Concerned Authority,
-
-Sub: Post-Marriage Financial Assistance for {name} – Humble Request
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {name}, {relation} of {guardian}, residing at {address}.
-
-{custom_note}
-
-Following the marriage, the family is facing severe financial hardship and is struggling to meet basic day-to-day needs. We hereby certify that the above-mentioned individual genuinely belongs to a financially weaker section of our community.
-
-We humbly request your good office to kindly extend all possible post-marriage financial assistance and support to help the family recover from this difficult situation.
-
-We shall be highly obliged for your kind consideration.
-
-Thanking you,
-""",
-
-    # "other" — AI generates the subject and body structure
-    "other": """\
-To,
-The Concerned Authority,
-
-Sub: {subject}
-
-Respected Sir/Madam,
-
-We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {name}, {relation} of {guardian}, residing at {address}.
-
-{custom_note}
-
-We humbly request your good office to kindly extend all possible assistance and support to the above-mentioned individual at the earliest.
-
-We shall be highly obliged for your kind consideration.
-
-Thanking you,
-""",
-}
-
 ISSUE_LABELS = {
-    "financial": "Financial Assistance",
     "health": "Health / Medical",
+    "financial": "Financial Assistance",
     "education": "Education",
-    "death_benefit": "Death Benefit",
     "marriage": "Marriage Assistance",
+    "death_benefit": "Death Benefit",
     "general": "General Recommendation",
     "other": "Other (AI Custom)",
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PDF generation: overlay text onto the original letterhead
-# Coordinates calibrated from the letterhead PDF and reference letter image
+# Para 4 — Request paragraph (templated per issue type)
+# Paras 1-3 are AI-generated, para 4 is fixed per issue type
+# ─────────────────────────────────────────────────────────────────────────────
+
+REQUEST_PARAS = {
+    "health": (
+        "We earnestly request your esteemed office to kindly render all possible "
+        "support and medical assistance to the patient and their family in this "
+        "difficult time."
+    ),
+    "financial": (
+        "We humbly request your good office to kindly extend all possible financial "
+        "assistance and support to the above-mentioned individual at the earliest."
+    ),
+    "education": (
+        "We kindly request your good office to provide the necessary educational "
+        "assistance or scholarship to enable the student to pursue their studies "
+        "without financial burden."
+    ),
+    "marriage": (
+        "We humbly request your good office to kindly extend all possible "
+        "post-marriage financial assistance and support to help the family "
+        "recover from this difficult situation."
+    ),
+    "death_benefit": (
+        "We humbly request your office to extend the applicable death benefit "
+        "and any other form of assistance to help the family during this "
+        "difficult period."
+    ),
+    "general": (
+        "We request your kind consideration and support in the above-mentioned "
+        "matter."
+    ),
+    "other": (
+        "We humbly request your good office to kindly extend all possible "
+        "assistance and support to the above-mentioned individual at the earliest."
+    ),
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PDF generation
 # ─────────────────────────────────────────────────────────────────────────────
 
 def generate_letter_pdf(data: dict) -> bytes:
@@ -205,43 +118,22 @@ def generate_letter_pdf(data: dict) -> bytes:
     guardian = data.get("guardian", "").strip()
     address = data.get("address", "").strip()
     issue_type = data.get("issue_type", "general")
-    custom_note = data.get("custom_note", "").strip()
-    subject = data.get("subject", "").strip()
+    body_text = data.get("body", "").strip()
     date_str = data.get("date", datetime.date.today().strftime("%d/%m/%Y"))
 
-    # Always use fixed recipient
-    recipient = DEFAULT_RECIPIENT
+    # Build the full letter body:
+    # To + recipient + paras 1-3 (from body) + para 4 (templated)
+    request_para = REQUEST_PARAS.get(issue_type, REQUEST_PARAS["general"])
 
-    # Fill the template
-    template = LETTER_TEMPLATES.get(issue_type, LETTER_TEMPLATES["general"])
+    # If body is empty, use a placeholder
+    if not body_text:
+        body_text = (
+            f"{name}, {relation} of {guardian if guardian else '—'}, residing at "
+            f"{address if address else '—'}, is in need of assistance."
+        )
 
-    format_kwargs = dict(
-        name=name,
-        relation=relation,
-        guardian=guardian if guardian else "—",
-        address=address if address else "—",
-        custom_note=custom_note if custom_note else "We hereby certify and support the above-mentioned individual's request.",
-    )
-
-    # "other" type needs a subject
-    if issue_type == "other":
-        format_kwargs["subject"] = subject if subject else f"Request for Assistance – {name}"
-
-    raw_body = template.format(**format_kwargs)
-
-    # Replace default "To, / The Concerned Authority," with fixed recipient
-    body_lines = raw_body.split("\n")
-    if body_lines and body_lines[0].startswith("To"):
-        idx = 0
-        while idx < len(body_lines) and (
-            body_lines[idx].startswith("To") or
-            body_lines[idx].strip() == "The Concerned Authority," or
-            not body_lines[idx].strip()
-        ):
-            idx += 1
-        body_text = recipient + "\n\n" + "\n".join(body_lines[idx:])
-    else:
-        body_text = raw_body
+    # Compose the full text that gets rendered on the PDF
+    full_text = RECIPIENT + "\n\n" + body_text + "\n\n" + request_para
 
     # Open the original letterhead PDF as background image
     src_doc = fitz.open(TEMPLATE_PDF)
@@ -259,35 +151,22 @@ def generate_letter_pdf(data: dict) -> bytes:
     img_reader = ImageReader(io.BytesIO(img_data))
     c.drawImage(img_reader, 0, 0, width=W, height=H)
 
-    # ── Date ──
-    # "Date:" label is pre-printed at ~x=446pt, y=154pt from top
-    # White-out the old date area and write clean date
+    # ── Date (right side, next to pre-printed "Date:" label) ──
     date_label_x = W * 0.595  # ≈ 364pt
     date_y = H - 154           # ≈ 638pt from bottom
 
+    # White-out the old date area
     c.setFillColor(colors.white)
     c.rect(date_label_x - 2, date_y - 12, W * 0.38, 28, fill=1, stroke=0)
 
+    # Draw clean date
     c.setFillColor(colors.black)
     c.setFont("Helvetica-Bold", 11)
     c.drawString(date_label_x, date_y, f"Date: {date_str}")
 
-    # ── Signature Overlay ──
-    # Signature placed at bottom-right, above the pre-printed signature line
-    if SIG_PATH and os.path.exists(SIG_PATH):
-        try:
-            sig_img = ImageReader(SIG_PATH)
-            # Aspect-correct: original 254x104px, ratio ~2.44
-            sig_w = 100
-            sig_h = sig_w / 2.44  # ≈ 41pt
-            c.drawImage(sig_img, 420, 52, width=sig_w, height=sig_h, mask='auto')
-        except Exception as e:
-            print(f"Signature overlay warning: {e}")
-
-    # ── Letter body ──
-    # Body starts at 185pt from top (below header), ends at 160pt from bottom (above footer)
-    body_top_y = H - 185
-    body_bottom_y = 160
+    # ── Body text (To + recipient + 4 paragraphs) ──
+    body_top_y = H - 185       # 185pt from top
+    body_bottom_y = 195        # leave room for "For..." and signature
     left_margin = 42
     right_margin = W - 42
     body_width = right_margin - left_margin
@@ -296,13 +175,14 @@ def generate_letter_pdf(data: dict) -> bytes:
     c.setFont("Helvetica", 10.5)
     c.setFillColor(colors.black)
 
-    lines = body_text.split("\n")
+    lines = full_text.split("\n")
     y = body_top_y
     for line in lines:
         if y < body_bottom_y:
             break
         words = line.split()
         if not words:
+            # Blank line — paragraph break
             y -= line_height * 0.55
             continue
         current_line = ""
@@ -322,6 +202,29 @@ def generate_letter_pdf(data: dict) -> bytes:
             c.drawString(left_margin, y, current_line)
             y -= line_height
 
+    # ── "For SKSSF Valachil Padavu Unit" (left side, below body) ──
+    c.setFont("Helvetica-Bold", 10.5)
+    c.setFillColor(colors.black)
+    c.drawString(left_margin, 175, f"For {ORG_NAME}")
+
+    # ── Signature image (bottom right, on signature line) ──
+    if SIG_PATH and os.path.exists(SIG_PATH):
+        try:
+            sig_img = ImageReader(SIG_PATH)
+            sig_w = 100
+            sig_h = sig_w / 2.44  # aspect-correct
+            c.drawImage(sig_img, 420, 52, width=sig_w, height=sig_h, mask='auto')
+        except Exception as e:
+            print(f"Signature overlay warning: {e}")
+
+    # ── Name and designation (below signature, right side) ──
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(colors.black)
+    c.drawString(420, 38, SIG_NAME)
+    c.setFont("Helvetica", 9.5)
+    c.setFillColor(colors.black)
+    c.drawString(420, 24, SIG_DESIGNATION)
+
     c.save()
     src_doc.close()
     out_buf.seek(0)
@@ -329,7 +232,8 @@ def generate_letter_pdf(data: dict) -> bytes:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# AI Parser — uses Mistral API for real NLP extraction
+# AI Parser — uses Mistral API
+# Generates 3 paragraphs (intro, details, financial condition)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def ai_parse_with_mistral(text: str) -> dict:
@@ -338,13 +242,13 @@ def ai_parse_with_mistral(text: str) -> dict:
     if not api_key:
         raise RuntimeError("MISTRAL_API_KEY not configured")
 
+    issue_types = ", ".join(ISSUE_LABELS.keys())
+
     system_prompt = (
         "You are a letter parser for SKSSF, a community organization. "
         "Extract structured information from the given text about a person in need "
         "and return ONLY valid JSON. No explanation, no markdown."
     )
-
-    issue_types = ", ".join(ISSUE_LABELS.keys())
 
     user_prompt = f"""Extract the following fields from this text and return as JSON:
 - name: full name of the person in need (string, empty if not found)
@@ -352,12 +256,15 @@ def ai_parse_with_mistral(text: str) -> dict:
 - guardian: parent or husband name if mentioned (string, empty if not found)
 - address: residence location if mentioned (string, empty if not found)
 - issue_type: one of "{issue_types}" — use "other" if it doesn't fit any category
-- subject: a concise formal subject line for the letter (e.g. "Medical Assistance for {text.split(',')[0] if ',' in text else 'Applicant'} – Request Letter"). Only needed for "other" type, but always provide it.
-- custom_note: a formal 2-3 sentence summary of the situation, written in a respectful tone suitable for an official community letter. Use third person. Do not use first person pronouns.
+- body: Three formal paragraphs separated by blank lines, suitable for an official community letter.
+  Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
+  Paragraph 2 (Details): Explain the situation in detail. For health: hospital, diagnosis, treatment, expenses. For education: academic details, fees. For marriage: marriage details. For death: death details, date, cause. For financial: situation details, expenses. 2-3 sentences.
+  Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment status, economic hardship. 2-3 sentences.
+  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our).
 
 Text: "{text}"
 
-Return ONLY JSON with these exact keys."""
+Return ONLY JSON with these exact keys. The "body" value must contain all 3 paragraphs separated by double newlines."""
 
     payload = {
         "model": "mistral-small-latest",
@@ -381,15 +288,13 @@ Return ONLY JSON with these exact keys."""
     content = r.json()["choices"][0]["message"]["content"]
     parsed = json.loads(content)
 
-    # Validate and fill defaults
     defaults = {
         "name": "",
         "relation": "S/o",
         "guardian": "",
         "address": "",
         "issue_type": "general",
-        "subject": "",
-        "custom_note": "",
+        "body": "",
     }
     for key, default_val in defaults.items():
         val = parsed.get(key, default_val)
@@ -397,15 +302,14 @@ Return ONLY JSON with these exact keys."""
             val = default_val
         defaults[key] = str(val).strip()
 
-    # Validate issue_type
     if defaults["issue_type"] not in ISSUE_LABELS:
         defaults["issue_type"] = "other"
 
     return defaults
 
 
-def ai_fix_note_with_mistral(text: str, issue_type: str, name: str) -> str:
-    """Use Mistral to clean up / formalize a rough custom note."""
+def ai_fix_body_with_mistral(text: str, issue_type: str, name: str) -> str:
+    """Use Mistral to clean up / formalize the body text into 3 proper paragraphs."""
     api_key = os.environ.get("MISTRAL_API_KEY", "")
     if not api_key:
         raise RuntimeError("MISTRAL_API_KEY not configured")
@@ -413,19 +317,26 @@ def ai_fix_note_with_mistral(text: str, issue_type: str, name: str) -> str:
     issue_label = ISSUE_LABELS.get(issue_type, "general")
 
     user_prompt = f"""You are writing for an official community organization letter.
-Rewrite the following rough note into a clean, formal 2-4 sentence paragraph suitable for an official letter.
+Rewrite the following rough text into 3 clean, formal paragraphs suitable for an official letter.
+
+Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
+Paragraph 2 (Details): Explain the situation in detail — for health: hospital, diagnosis, treatment, expenses; for education: academic details, fees; for marriage: marriage details; for death: death details; for financial: situation details. 2-3 sentences.
+Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment, hardship. 2-3 sentences.
+
+Rules:
 - Keep it in third person
 - Maintain all factual details (amounts, hospital names, conditions, dates)
 - Use respectful, formal tone
-- Do NOT add any greeting or salutation — just the paragraph
+- Do NOT add any greeting or salutation
 - Do NOT use first person pronouns (I, we, our)
+- Separate the 3 paragraphs with a blank line
 
 Issue type: {issue_label}
 Person name: {name}
 
-Rough note: "{text}"
+Rough text: "{text}"
 
-Return ONLY the rewritten paragraph, no quotes, no JSON, no explanation."""
+Return ONLY the 3 paragraphs separated by blank lines. No quotes, no JSON, no explanation."""
 
     payload = {
         "model": "mistral-small-latest",
@@ -482,7 +393,6 @@ def generate():
 
 @app.route("/preview", methods=["POST"])
 def preview():
-    """Return PDF inline for browser preview."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "No data"}), 400
@@ -500,12 +410,10 @@ def preview():
 
 @app.route("/ai_parse", methods=["POST"])
 def ai_parse():
-    """AI Parser — extracts structured details from raw voice/text using Mistral."""
     data = request.get_json() or {}
     text = data.get("text", "").strip()
     if not text:
         return jsonify({"error": "No text provided"}), 400
-
     try:
         extracted = ai_parse_with_mistral(text)
         return jsonify({
@@ -523,20 +431,18 @@ def ai_parse():
 
 @app.route("/ai_fix", methods=["POST"])
 def ai_fix():
-    """AI Fix — cleans up / formalizes a rough custom note using Mistral."""
     data = request.get_json() or {}
     text = data.get("text", "").strip()
     issue_type = data.get("issue_type", "general")
     name = data.get("name", "")
     if not text:
         return jsonify({"error": "No text provided"}), 400
-
     try:
-        fixed = ai_fix_note_with_mistral(text, issue_type, name)
+        fixed = ai_fix_body_with_mistral(text, issue_type, name)
         return jsonify({
             "status": "success",
-            "fixed_note": fixed,
-            "message": "AI cleaned up the note!",
+            "fixed_body": fixed,
+            "message": "AI cleaned up the letter body!",
         })
     except Exception as e:
         return jsonify({
@@ -565,7 +471,7 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))
     sig_status = "loaded" if SIG_PATH else "NOT FOUND"
-    print(f"SKSSF Letter Automation v3 — http://localhost:{port}")
+    print(f"SKSSF Letter Automation v4 — http://localhost:{port}")
     print(f"  Signature: {sig_status}")
     print(f"  Letterhead: {'loaded' if os.path.exists(TEMPLATE_PDF) else 'NOT FOUND'}")
     print(f"  AI Parser: Mistral API {'configured' if os.environ.get('MISTRAL_API_KEY') else 'NOT configured'}")
