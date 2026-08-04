@@ -1,25 +1,51 @@
 """
-SKSSF Letter Automation Pipeline
+SKSSF Letter Automation Pipeline v3
 Generates official letters on the SKSSF Valachil Padavu Committee letterhead.
+- Fixed signature loading with fallback
+- Real AI parsing via Mistral API
+- Multi-issue: health, financial, education, death, marriage, general, other
+- "Other" type: AI generates custom subject + body
+- Fixed recipient (no UI field needed)
+- AI Fix button to clean up rough notes
+- Production-ready: gunicorn compatible, PORT env support
 """
 import os
 import io
+import json
 import datetime
 from flask import Flask, request, send_file, jsonify, render_template
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.utils import ImageReader
 import fitz  # PyMuPDF
+import requests
 
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PDF = os.path.join(BASE_DIR, "S36BW-826073106590.pdf")
-OUTPUT_DIR  = os.path.join(BASE_DIR, "generated")
+OUTPUT_DIR = os.path.join(BASE_DIR, "generated")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# ── Fixed recipient — same as shown in the reference letter ──
+DEFAULT_RECIPIENT = "To,\nThe Concerned Authority,"
+
+# Signature — try multiple possible filenames, skip broken/placeholder files
+SIG_CANDIDATES = [
+    "ibrahim_kaleel_signature.png",
+    "signature_ibrahim_kaleel.png",
+]
+SIG_PATH = None
+for candidate in SIG_CANDIDATES:
+    path = os.path.join(BASE_DIR, candidate)
+    if os.path.exists(path) and os.path.getsize(path) > 1000:
+        SIG_PATH = path
+        break
+
 # ─────────────────────────────────────────────────────────────────────────────
-# Letter body generators for each issue type
+# Letter templates for each issue type
+# Format matches the uploaded reference letter:
+#   To,\n<recipient>\n\nSub: <subject>\n\nRespected Sir/Madam,\n\n<body>\n\nThanking you,
 # ─────────────────────────────────────────────────────────────────────────────
 
 LETTER_TEMPLATES = {
@@ -116,11 +142,11 @@ The bereaved family is in a state of grief and financial hardship. We humbly req
 Thanking you,
 """,
 
-    "job": """\
+    "marriage": """\
 To,
 The Concerned Authority,
 
-Sub: Employment / Job Support for {name} – Request Letter
+Sub: Marriage Assistance for {name} – Humble Request
 
 Respected Sir/Madam,
 
@@ -128,65 +154,99 @@ We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {n
 
 {custom_note}
 
-The applicant is currently unemployed and is actively seeking a suitable job opportunity. We certify that the said person is diligent, honest, and capable of carrying out responsibilities entrusted to them.
+The family is facing severe financial constraints and is unable to meet the expenses associated with the marriage. We hereby certify that the above-mentioned individual genuinely belongs to a financially weaker section of our community.
 
-We humbly request your office to consider providing employment or any suitable job-related assistance to the above-mentioned individual.
+We humbly request your good office to kindly extend all possible marriage assistance and support to help the family during this important occasion.
+
+We shall be highly obliged for your kind consideration.
+
+Thanking you,
+""",
+
+    # "other" — AI generates the subject and body structure
+    "other": """\
+To,
+The Concerned Authority,
+
+Sub: {subject}
+
+Respected Sir/Madam,
+
+We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {name}, {relation} of {guardian}, residing at {address}.
+
+{custom_note}
+
+We humbly request your good office to kindly extend all possible assistance and support to the above-mentioned individual at the earliest.
+
+We shall be highly obliged for your kind consideration.
 
 Thanking you,
 """,
 }
 
 ISSUE_LABELS = {
-    "financial":    "Financial Assistance",
-    "health":       "Health / Medical Support",
-    "education":    "Educational Support",
-    "general":      "General Recommendation",
-    "death_benefit":"Death Benefit",
-    "job":          "Employment / Job Support",
+    "financial": "Financial Assistance",
+    "health": "Health / Medical",
+    "education": "Education",
+    "death_benefit": "Death Benefit",
+    "marriage": "Marriage Assistance",
+    "general": "General Recommendation",
+    "other": "Other (AI Custom)",
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PDF generation: overlay text onto the original letterhead
+# Coordinates calibrated from the letterhead PDF and reference letter image
 # ─────────────────────────────────────────────────────────────────────────────
 
 def generate_letter_pdf(data: dict) -> bytes:
-    name        = data.get("name", "").strip()
-    relation    = data.get("relation", "S/o").strip()
-    guardian    = data.get("guardian", "").strip()
-    address     = data.get("address", "").strip()
-    issue_type  = data.get("issue_type", "general")
+    name = data.get("name", "").strip()
+    relation = data.get("relation", "S/o").strip()
+    guardian = data.get("guardian", "").strip()
+    address = data.get("address", "").strip()
+    issue_type = data.get("issue_type", "general")
     custom_note = data.get("custom_note", "").strip()
-    date_str    = data.get("date", datetime.date.today().strftime("%d/%m/%Y"))
+    subject = data.get("subject", "").strip()
+    date_str = data.get("date", datetime.date.today().strftime("%d/%m/%Y"))
 
-    recipient   = data.get("recipient", "").strip()
-    if not recipient:
-        recipient = "To,\nThe Concerned Authority,"
-    elif not recipient.lower().startswith("to"):
-        recipient = f"To,\n{recipient}"
+    # Always use fixed recipient
+    recipient = DEFAULT_RECIPIENT
 
     # Fill the template
-    raw_body = LETTER_TEMPLATES.get(issue_type, LETTER_TEMPLATES["general"]).format(
+    template = LETTER_TEMPLATES.get(issue_type, LETTER_TEMPLATES["general"])
+
+    format_kwargs = dict(
         name=name,
         relation=relation,
-        guardian=guardian,
-        address=address,
-        custom_note=custom_note if custom_note else f"We hereby certify and support the above-mentioned individual's request.",
+        guardian=guardian if guardian else "—",
+        address=address if address else "—",
+        custom_note=custom_note if custom_note else "We hereby certify and support the above-mentioned individual's request.",
     )
-    # Replace default To line with custom recipient if provided
+
+    # "other" type needs a subject
+    if issue_type == "other":
+        format_kwargs["subject"] = subject if subject else f"Request for Assistance – {name}"
+
+    raw_body = template.format(**format_kwargs)
+
+    # Replace default "To, / The Concerned Authority," with fixed recipient
     body_lines = raw_body.split("\n")
     if body_lines and body_lines[0].startswith("To"):
-        # Remove default 'To,' and 'The Concerned Authority,'
         idx = 0
-        while idx < len(body_lines) and (body_lines[idx].startswith("To") or body_lines[idx].strip() == "The Concerned Authority," or not body_lines[idx].strip()):
+        while idx < len(body_lines) and (
+            body_lines[idx].startswith("To") or
+            body_lines[idx].strip() == "The Concerned Authority," or
+            not body_lines[idx].strip()
+        ):
             idx += 1
         body_text = recipient + "\n\n" + "\n".join(body_lines[idx:])
     else:
         body_text = raw_body
 
     # Open the original letterhead PDF as background image
-    src_doc  = fitz.open(TEMPLATE_PDF)
+    src_doc = fitz.open(TEMPLATE_PDF)
     src_page = src_doc[0]
-    page_rect = src_page.rect   # width x height in points
+    page_rect = src_page.rect
     W, H = page_rect.width, page_rect.height
 
     # Create a new PDF in memory
@@ -200,38 +260,33 @@ def generate_letter_pdf(data: dict) -> bytes:
     c.drawImage(img_reader, 0, 0, width=W, height=H)
 
     # ── Date ──
-    # Paint over the background "Date:" label then draw our own full line.
-    # Calibrated: "Date:" sits at x≈370–480pt, y_top≈148–160pt.
-    # In ReportLab (y from bottom): y ≈ H-160=632 to H-148=644.
-    date_label_x = W * 0.595   # ≈ 364pt  (left edge of "Date:" label)
-    date_y       = H - 154     # ≈ 638pt from bottom (154pt from top)
+    date_label_x = W * 0.595
+    date_y = H - 154
 
-    # White-out the original "Date:" label area (covers ~2 lines of height)
     c.setFillColor(colors.white)
     c.rect(date_label_x - 2, date_y - 12, W * 0.38, 28, fill=1, stroke=0)
 
-    # Draw clean "Date: DD/MM/YYYY" in one go
     c.setFillColor(colors.black)
     c.setFont("Helvetica-Bold", 11)
-    c.drawString(date_label_x, date_y, f"Date:  {date_str}")
+    c.drawString(date_label_x, date_y, f"Date: {date_str}")
 
-    # ── Signature Overlay (Ibrahim Kaleel - G.Secretary) ──
-    SIG_PATH = os.path.join(BASE_DIR, "ibrahim_kaleel_signature.png")
-    if os.path.exists(SIG_PATH):
-        sig_img = ImageReader(SIG_PATH)
-        # Position right above 'President / Secretary' line at bottom-right
-        c.drawImage(sig_img, 425, 56, width=95, height=32, mask='auto')
+    # ── Signature Overlay ──
+    if SIG_PATH and os.path.exists(SIG_PATH):
+        try:
+            sig_img = ImageReader(SIG_PATH)
+            sig_w = 100
+            sig_h = sig_w / 2.44
+            c.drawImage(sig_img, 420, 52, width=sig_w, height=sig_h, mask='auto')
+        except Exception as e:
+            print(f"Signature overlay warning: {e}")
 
     # ── Letter body ──
-    # Calibration: header ends ~130pt from top, body should start ~185pt from top.
-    # ReportLab y: body_top = H - 185 = 607pt from bottom.
-    # Footer (stamp) occupies bottom ~160pt, so stop at y = 160.
-    body_top_y    = H - 185
+    body_top_y = H - 185
     body_bottom_y = 160
-    left_margin   = 42
-    right_margin  = W - 42
-    body_width    = right_margin - left_margin
-    line_height   = 14.5
+    left_margin = 42
+    right_margin = W - 42
+    body_width = right_margin - left_margin
+    line_height = 14.5
 
     c.setFont("Helvetica", 10.5)
     c.setFillColor(colors.black)
@@ -256,6 +311,8 @@ def generate_letter_pdf(data: dict) -> bytes:
                 current_line = word
                 if y < body_bottom_y:
                     break
+        if y < body_bottom_y:
+            break
         if current_line and y >= body_bottom_y:
             c.drawString(left_margin, y, current_line)
             y -= line_height
@@ -267,12 +324,134 @@ def generate_letter_pdf(data: dict) -> bytes:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# AI Parser — uses Mistral API for real NLP extraction
+# ─────────────────────────────────────────────────────────────────────────────
+
+def ai_parse_with_mistral(text: str) -> dict:
+    """Parse raw text using Mistral API to extract structured letter fields."""
+    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("MISTRAL_API_KEY not configured")
+
+    system_prompt = (
+        "You are a letter parser for SKSSF, a community organization. "
+        "Extract structured information from the given text about a person in need "
+        "and return ONLY valid JSON. No explanation, no markdown."
+    )
+
+    issue_types = ". ".join(ISSUE_LABELS.keys())
+
+    user_prompt = f"""Extract the following fields from this text and return as JSON:
+- name: full name of the person in need (string, empty if not found)
+- relation: "S/o", "D/o", "W/o", or "H/o" — infer from gender/context (default "S/o")
+- guardian: parent or husband name if mentioned (string, empty if not found)
+- address: residence location if mentioned (string, empty if not found)
+- issue_type: one of "{issue_types}" — use "other" if it doesn't fit any category
+- subject: a concise formal subject line for the letter. Only needed for "other" type, but always provide it.
+- custom_note: a formal 2-3 sentence summary of the situation, written in a respectful tone suitable for an official community letter. Use third person. Do not use first person pronouns.
+
+Text: "{text}"
+
+Return ONLY JSON with these exact keys."""
+
+    payload = {
+        "model": "mistral-small-latest",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.3,
+        "response_format": {"type": "json_object"},
+    }
+
+    r = requests.post(
+        "https://api.mistral.ai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=30,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Mistral API error: {r.status_code} — {r.text[:200]}")
+
+    content = r.json()["choices"][0]["message"]["content"]
+    parsed = json.loads(content)
+
+    defaults = {
+        "name": "",
+        "relation": "S/o",
+        "guardian": "",
+        "address": "",
+        "issue_type": "general",
+        "subject": "",
+        "custom_note": "",
+    }
+    for key, default_val in defaults.items():
+        val = parsed.get(key, default_val)
+        if val is None:
+            val = default_val
+        defaults[key] = str(val).strip()
+
+    if defaults["issue_type"] not in ISSUE_LABELS:
+        defaults["issue_type"] = "other"
+
+    return defaults
+
+
+def ai_fix_note_with_mistral(text: str, issue_type: str, name: str) -> str:
+    """Use Mistral to clean up / formalize a rough custom note."""
+    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("MISTRAL_API_KEY not configured")
+
+    issue_label = ISSUE_LABELS.get(issue_type, "general")
+
+    user_prompt = f"""You are writing for an official community organization letter.
+Rewrite the following rough note into a clean, formal 2-4 sentence paragraph suitable for an official letter.
+- Keep it in third person
+- Maintain all factual details (amounts, hospital names, conditions, dates)
+- Use respectful, formal tone
+- Do NOT add any greeting or salutation — just the paragraph
+- Do NOT use first person pronouns (I, we, our)
+
+Issue type: {issue_label}
+Person name: {name}
+
+Rough note: "{text}"
+
+Return ONLY the rewritten paragraph, no quotes, no JSON, no explanation."""
+
+    payload = {
+        "model": "mistral-small-latest",
+        "messages": [
+            {"role": "system", "content": "You are a professional letter writer for a community organization. Return only the rewritten text."},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.3,
+    }
+
+    r = requests.post(
+        "https://api.mistral.ai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=30,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Mistral API error: {r.status_code}")
+
+    content = r.json()["choices"][0]["message"]["content"].strip()
+    if content.startswith('"') and content.endswith('"'):
+        content = content[1:-1]
+    return content
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Routes
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -282,7 +461,7 @@ def generate():
     try:
         pdf_bytes = generate_letter_pdf(data)
         name_slug = data["name"].replace(" ", "_")
-        filename  = f"SKSSF_Letter_{name_slug}_{datetime.date.today().strftime('%Y%m%d')}.pdf"
+        filename = f"SKSSF_Letter_{name_slug}_{datetime.date.today().strftime('%Y%m%d')}.pdf"
         return send_file(
             io.BytesIO(pdf_bytes),
             mimetype="application/pdf",
@@ -292,6 +471,7 @@ def generate():
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/preview", methods=["POST"])
 def preview():
@@ -310,67 +490,76 @@ def preview():
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/ai_parse", methods=["POST"])
 def ai_parse():
-    """Smart AI Parser to extract details from raw voice/text description of an issue."""
+    """AI Parser — extracts structured details from raw voice/text using Mistral."""
     data = request.get_json() or {}
     text = data.get("text", "").strip()
     if not text:
         return jsonify({"error": "No text provided"}), 400
 
-    import re
+    try:
+        extracted = ai_parse_with_mistral(text)
+        return jsonify({
+            "status": "success",
+            "extracted": extracted,
+            "message": "AI successfully parsed the issue details!",
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "message": "AI parsing failed. You can still fill the form manually.",
+        }), 500
 
-    # Default extracted fields
-    extracted = {
-        "name": "",
-        "relation": "S/o",
-        "guardian": "",
-        "address": "",
-        "issue_type": "general",
-        "custom_note": "",
-        "recipient": "The Concerned Authority"
-    }
 
-    # Extract Name (e.g., "Ruksana is...", "Mohammed Ashraf...")
-    name_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)', text)
-    if name_match:
-        extracted["name"] = name_match.group(1)
+@app.route("/ai_fix", methods=["POST"])
+def ai_fix():
+    """AI Fix — cleans up / formalizes a rough custom note using Mistral."""
+    data = request.get_json() or {}
+    text = data.get("text", "").strip()
+    issue_type = data.get("issue_type", "general")
+    name = data.get("name", "")
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
 
-    # Address / Resident detection (e.g. "resident of Valachil Padavu")
-    addr_match = re.search(r'resident of ([^.\n,]+)', text, re.IGNORECASE)
-    if addr_match:
-        extracted["address"] = addr_match.group(1).strip()
+    try:
+        fixed = ai_fix_note_with_mistral(text, issue_type, name)
+        return jsonify({
+            "status": "success",
+            "fixed_note": fixed,
+            "message": "AI cleaned up the note!",
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "message": "AI fix failed.",
+        }), 500
 
-    # Determine relation & gender
-    if re.search(r'\b(married woman|she|her|daughter|wife)\b', text, re.IGNORECASE):
-        extracted["relation"] = "W/o"
-
-    # Determine issue category
-    lower_t = text.lower()
-    if any(k in lower_t for k in ["hospital", "stomach", "stone", "surgery", "patient", "medical", "disease", "treatment"]):
-        extracted["issue_type"] = "health"
-    elif any(k in lower_t for k in ["lakh", "rupees", "financial", "poverty", "debt", "poor", "money"]):
-        extracted["issue_type"] = "financial"
-    elif any(k in lower_t for k in ["school", "college", "fees", "education", "student", "study"]):
-        extracted["issue_type"] = "education"
-    elif any(k in lower_t for k in ["death", "expired", "passed away", "demise"]):
-        extracted["issue_type"] = "death_benefit"
-    elif any(k in lower_t for k in ["job", "work", "unemployed"]):
-        extracted["issue_type"] = "job"
-
-    # Polish custom note for formal letter
-    extracted["custom_note"] = text
-
-    return jsonify({
-        "status": "success",
-        "extracted": extracted,
-        "message": "AI successfully parsed the issue details!"
-    })
 
 @app.route("/issue_types")
 def issue_types():
     return jsonify(ISSUE_LABELS)
 
+
+@app.route("/health")
+def health():
+    return jsonify({
+        "status": "ok",
+        "signature_loaded": SIG_PATH is not None,
+        "signature_path": os.path.basename(SIG_PATH) if SIG_PATH else None,
+        "template_pdf_exists": os.path.exists(TEMPLATE_PDF),
+        "ai_configured": bool(os.environ.get("MISTRAL_API_KEY")),
+    })
+
+
 if __name__ == "__main__":
-    print("SKSSF Letter Automation Pipeline running at http://localhost:5050")
-    app.run(debug=True, port=5050)
+    port = int(os.environ.get("PORT", 5050))
+    sig_status = "loaded" if SIG_PATH else "NOT FOUND"
+    print(f"SKSSF Letter Automation v3 — http://localhost:{port}")
+    print(f"  Signature: {sig_status}")
+    print(f"  Letterhead: {'loaded' if os.path.exists(TEMPLATE_PDF) else 'NOT FOUND'}")
+    print(f"  AI Parser: Mistral API {'configured' if os.environ.get('MISTRAL_API_KEY') else 'NOT configured'}")
+    app.run(debug=False, host="0.0.0.0", port=port)

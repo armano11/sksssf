@@ -1,0 +1,1 @@
+flask>=3.0\nreportlab>=4.0\nPyMuPDF>=1.24\nrequests>=2.31\ngunicorn>=21.2\n
