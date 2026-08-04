@@ -272,7 +272,7 @@ def ai_parse_with_mistral(text: str) -> dict:
   Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
   Paragraph 2 (Details): Explain the situation in detail. For health: hospital, diagnosis, treatment, expenses. For education: academic details, fees. For marriage: marriage details. For death: death details, date, cause. For financial: situation details, expenses. 2-3 sentences.
   Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment status, economic hardship. 2-3 sentences.
-  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our). Do NOT use bracketed placeholders like [City] or [Date] — if a detail is not mentioned, simply omit it.
+  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our). Do NOT use bracketed placeholders. Do NOT invent details not present in the text — use only what is stated.
 
 Text: "{text}"
 
@@ -328,29 +328,27 @@ def ai_fix_body_with_mistral(text: str, issue_type: str, name: str) -> str:
 
     issue_label = ISSUE_LABELS.get(issue_type, "general")
 
-    user_prompt = f"""You are writing for an official community organization letter.
-Rewrite the following rough text into 3 clean, formal paragraphs suitable for an official letter.
+    user_prompt = f"""Rewrite the following rough text into 3 clean, formal paragraphs for an official letter.
 
-Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
-Paragraph 2 (Details): Explain the situation in detail — for health: hospital, diagnosis, treatment, expenses; for education: academic details, fees; for marriage: marriage details; for death: death details; for financial: situation details. 2-3 sentences.
-Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment, hardship. 2-3 sentences.
+STRICT RULES — VIOLATION = FAILURE:
+- Use ONLY information present in the rough text. Do NOT invent, assume, or add ANY detail not explicitly stated.
+- Do NOT add city names, dates, medical terms, amounts, or conditions that are not in the original text.
+- Do NOT use placeholders like [City], [Date], [Name] — if a detail is missing, simply omit it.
+- Only rephrase and formalize what is already written. You are cleaning up grammar and tone, NOT adding content.
+- Keep it in third person. No greetings, no salutations, no first person pronouns (I, we, our).
+- Separate the 3 paragraphs with a blank line. Each paragraph: 2-3 sentences.
 
-CRITICAL RULES:
-- Keep it in third person
-- Maintain all factual details (amounts, hospital names, conditions, dates)
-- Use respectful, formal tone
-- Do NOT add any greeting or salutation
-- Do NOT use first person pronouns (I, we, our)
-- Do NOT use placeholders like [City], [Date], [Name], [Amount] — if a detail is missing, omit it entirely. Never use bracketed placeholders.
-- Separate the 3 paragraphs with a blank line
-- Each paragraph must be 2-3 complete sentences
+Paragraph structure:
+1. Introduction: Who is the person, where do they live, what is their situation (ONLY from the text).
+2. Details: What happened, where, what costs (ONLY from the text).
+3. Financial condition: Income, employment, hardship (ONLY from the text).
 
 Issue type: {issue_label}
 Person name: {name}
 
 Rough text: "{text}"
 
-Return ONLY the 3 paragraphs separated by blank lines. No quotes, no JSON, no explanation."""
+Return ONLY the 3 paragraphs. No quotes, no JSON, no explanation."""
 
     payload = {
         "model": "mistral-small-latest",
