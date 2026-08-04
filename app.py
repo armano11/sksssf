@@ -202,28 +202,33 @@ def generate_letter_pdf(data: dict) -> bytes:
             c.drawString(left_margin, y, current_line)
             y -= line_height
 
-    # ── "For SKSSF Valachil Padavu Unit" (left side, below body) ──
+    # ── "For SKSSF Valachil Padavu Unit" — positioned dynamically after body ──
+    # Place it 20pt below where the body text ended (y is already at next line position)
+    for_y = y - 20
+    # But don't go below 130pt from bottom (need room for signature below)
+    for_y = max(for_y, 130)
     c.setFont("Helvetica-Bold", 10.5)
     c.setFillColor(colors.black)
-    c.drawString(left_margin, 175, f"For {ORG_NAME}")
+    c.drawString(left_margin, for_y, f"For {ORG_NAME}")
 
     # ── Signature image (bottom right, on signature line) ──
+    # Enlarged: 120pt wide for better visibility
     if SIG_PATH and os.path.exists(SIG_PATH):
         try:
             sig_img = ImageReader(SIG_PATH)
-            sig_w = 100
-            sig_h = sig_w / 2.44  # aspect-correct
-            c.drawImage(sig_img, 420, 52, width=sig_w, height=sig_h, mask='auto')
+            sig_w = 120
+            sig_h = sig_w / 2.44  # aspect-correct ≈ 49pt
+            c.drawImage(sig_img, 400, 55, width=sig_w, height=sig_h, mask='auto')
         except Exception as e:
             print(f"Signature overlay warning: {e}")
 
     # ── Name and designation (below signature, right side) ──
     c.setFont("Helvetica-Bold", 10)
     c.setFillColor(colors.black)
-    c.drawString(420, 38, SIG_NAME)
+    c.drawString(400, 40, SIG_NAME)
     c.setFont("Helvetica", 9.5)
     c.setFillColor(colors.black)
-    c.drawString(420, 24, SIG_DESIGNATION)
+    c.drawString(400, 26, SIG_DESIGNATION)
 
     c.save()
     src_doc.close()
@@ -267,7 +272,7 @@ def ai_parse_with_mistral(text: str) -> dict:
   Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
   Paragraph 2 (Details): Explain the situation in detail. For health: hospital, diagnosis, treatment, expenses. For education: academic details, fees. For marriage: marriage details. For death: death details, date, cause. For financial: situation details, expenses. 2-3 sentences.
   Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment status, economic hardship. 2-3 sentences.
-  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our).
+  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our). Do NOT use bracketed placeholders like [City] or [Date] — if a detail is not mentioned, simply omit it.
 
 Text: "{text}"
 
@@ -330,13 +335,15 @@ Paragraph 1 (Introduction): Introduce the person — name, place, marital status
 Paragraph 2 (Details): Explain the situation in detail — for health: hospital, diagnosis, treatment, expenses; for education: academic details, fees; for marriage: marriage details; for death: death details; for financial: situation details. 2-3 sentences.
 Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment, hardship. 2-3 sentences.
 
-Rules:
+CRITICAL RULES:
 - Keep it in third person
 - Maintain all factual details (amounts, hospital names, conditions, dates)
 - Use respectful, formal tone
 - Do NOT add any greeting or salutation
 - Do NOT use first person pronouns (I, we, our)
+- Do NOT use placeholders like [City], [Date], [Name], [Amount] — if a detail is missing, omit it entirely. Never use bracketed placeholders.
 - Separate the 3 paragraphs with a blank line
+- Each paragraph must be 2-3 complete sentences
 
 Issue type: {issue_label}
 Person name: {name}
