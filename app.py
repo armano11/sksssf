@@ -61,7 +61,7 @@ We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {n
 
 {custom_note}
 
-The family is unable to meet basic day-to-day needs and is in dire need of financial support. {name} has been a member of our community and is known for their honesty and integrity.
+Due to unforeseen circumstances, the family has fallen into severe financial hardship and is unable to meet basic day-to-day needs. {name} has been a member of our community and is known for their honesty and integrity.
 
 We humbly request your good office to kindly extend all possible financial assistance and support to the above-mentioned individual at the earliest.
 
@@ -74,7 +74,7 @@ Thanking you,
 To,
 The Concerned Authority,
 
-Sub: Medical Assistance / Health Support for {name} – Request Letter
+Sub: Post-Treatment Medical Assistance for {name} – Request Letter
 
 Respected Sir/Madam,
 
@@ -82,7 +82,7 @@ We, the members of SKSSF Valachil Padavu Unit, are writing this letter on behalf
 
 {custom_note}
 
-The patient is currently undergoing treatment and is in need of urgent medical assistance. The family lacks sufficient resources to bear the medical expenses. We verify that the above information is true to the best of our knowledge.
+The patient has undergone treatment and the family has incurred significant medical expenses. They are now in need of financial assistance to recover from the burden of these costs. The family lacks sufficient resources to cope with the situation. We verify that the above information is true to the best of our knowledge.
 
 We earnestly request your esteemed office to kindly render all possible support and medical assistance to the patient and their family in this difficult time.
 
@@ -93,7 +93,7 @@ Thanking you,
 To,
 The Concerned Authority,
 
-Sub: Educational Support / Scholarship for {name} – Request Letter
+Sub: Educational Assistance for {name} – Request Letter
 
 Respected Sir/Madam,
 
@@ -133,11 +133,11 @@ Sub: Death Benefit / Bereavement Support for the Family of {name}
 
 Respected Sir/Madam,
 
-We, the members of SKSSF Valachil Padavu Unit, write this letter with deep sorrow to inform you about the untimely demise of {name}, {relation} of {guardian}, who was a resident of {address}.
+We, the members of SKSSF Valachil Padavu Unit, write this letter with deep sorrow to inform you about the demise of {name}, {relation} of {guardian}, who was a resident of {address}.
 
 {custom_note}
 
-The bereaved family is in a state of grief and financial hardship. We humbly request your office to extend the applicable death benefit and any other form of assistance to help the family during this difficult period.
+Following the passing of {name}, the bereaved family is in a state of grief and financial hardship. We humbly request your office to extend the applicable death benefit and any other form of assistance to help the family during this difficult period.
 
 Thanking you,
 """,
@@ -146,7 +146,7 @@ Thanking you,
 To,
 The Concerned Authority,
 
-Sub: Marriage Assistance for {name} – Humble Request
+Sub: Post-Marriage Financial Assistance for {name} – Humble Request
 
 Respected Sir/Madam,
 
@@ -154,9 +154,9 @@ We, the members of SKSSF Valachil Padavu Unit, write this letter on behalf of {n
 
 {custom_note}
 
-The family is facing severe financial constraints and is unable to meet the expenses associated with the marriage. We hereby certify that the above-mentioned individual genuinely belongs to a financially weaker section of our community.
+Following the marriage, the family is facing severe financial hardship and is struggling to meet basic day-to-day needs. We hereby certify that the above-mentioned individual genuinely belongs to a financially weaker section of our community.
 
-We humbly request your good office to kindly extend all possible marriage assistance and support to help the family during this important occasion.
+We humbly request your good office to kindly extend all possible post-marriage financial assistance and support to help the family recover from this difficult situation.
 
 We shall be highly obliged for your kind consideration.
 
@@ -260,8 +260,10 @@ def generate_letter_pdf(data: dict) -> bytes:
     c.drawImage(img_reader, 0, 0, width=W, height=H)
 
     # ── Date ──
-    date_label_x = W * 0.595
-    date_y = H - 154
+    # "Date:" label is pre-printed at ~x=446pt, y=154pt from top
+    # White-out the old date area and write clean date
+    date_label_x = W * 0.595  # ≈ 364pt
+    date_y = H - 154           # ≈ 638pt from bottom
 
     c.setFillColor(colors.white)
     c.rect(date_label_x - 2, date_y - 12, W * 0.38, 28, fill=1, stroke=0)
@@ -271,16 +273,19 @@ def generate_letter_pdf(data: dict) -> bytes:
     c.drawString(date_label_x, date_y, f"Date: {date_str}")
 
     # ── Signature Overlay ──
+    # Signature placed at bottom-right, above the pre-printed signature line
     if SIG_PATH and os.path.exists(SIG_PATH):
         try:
             sig_img = ImageReader(SIG_PATH)
+            # Aspect-correct: original 254x104px, ratio ~2.44
             sig_w = 100
-            sig_h = sig_w / 2.44
+            sig_h = sig_w / 2.44  # ≈ 41pt
             c.drawImage(sig_img, 420, 52, width=sig_w, height=sig_h, mask='auto')
         except Exception as e:
             print(f"Signature overlay warning: {e}")
 
     # ── Letter body ──
+    # Body starts at 185pt from top (below header), ends at 160pt from bottom (above footer)
     body_top_y = H - 185
     body_bottom_y = 160
     left_margin = 42
@@ -339,7 +344,7 @@ def ai_parse_with_mistral(text: str) -> dict:
         "and return ONLY valid JSON. No explanation, no markdown."
     )
 
-    issue_types = ". ".join(ISSUE_LABELS.keys())
+    issue_types = ", ".join(ISSUE_LABELS.keys())
 
     user_prompt = f"""Extract the following fields from this text and return as JSON:
 - name: full name of the person in need (string, empty if not found)
@@ -347,7 +352,7 @@ def ai_parse_with_mistral(text: str) -> dict:
 - guardian: parent or husband name if mentioned (string, empty if not found)
 - address: residence location if mentioned (string, empty if not found)
 - issue_type: one of "{issue_types}" — use "other" if it doesn't fit any category
-- subject: a concise formal subject line for the letter. Only needed for "other" type, but always provide it.
+- subject: a concise formal subject line for the letter (e.g. "Medical Assistance for {text.split(',')[0] if ',' in text else 'Applicant'} – Request Letter"). Only needed for "other" type, but always provide it.
 - custom_note: a formal 2-3 sentence summary of the situation, written in a respectful tone suitable for an official community letter. Use third person. Do not use first person pronouns.
 
 Text: "{text}"
@@ -376,6 +381,7 @@ Return ONLY JSON with these exact keys."""
     content = r.json()["choices"][0]["message"]["content"]
     parsed = json.loads(content)
 
+    # Validate and fill defaults
     defaults = {
         "name": "",
         "relation": "S/o",
@@ -391,6 +397,7 @@ Return ONLY JSON with these exact keys."""
             val = default_val
         defaults[key] = str(val).strip()
 
+    # Validate issue_type
     if defaults["issue_type"] not in ISSUE_LABELS:
         defaults["issue_type"] = "other"
 
