@@ -13,9 +13,7 @@ Letter format (matches reference letter exactly):
   Para 2: Details (hospital/institution, diagnosis/issue, treatment, expenses)
   Para 3: Financial condition (income, employment, hardship)
    Para 4: Request for assistance (templated per issue type)
-   [Signature]
-  Ibrahim Kaleel
-  G. Secretary
+   [Signature block — pre-printed on the letterhead]
 """
 import os
 import io
@@ -35,22 +33,11 @@ TEMPLATE_PDF = os.path.join(BASE_DIR, "S36BW-826073106590.pdf")
 OUTPUT_DIR = os.path.join(BASE_DIR, "generated")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ── Fixed recipient and signatory ──
+# ── Fixed recipient ──
 RECIPIENT = "To\nSKSSF Sahachari\nKendra Samithi"
-SIG_NAME = "Ibrahim Kaleel"
-SIG_DESIGNATION = "G. Secretary"
 
-# Signature — try multiple possible filenames, skip broken/placeholder files
-SIG_CANDIDATES = [
-    "ibrahim_kaleel_signature.png",
-    "signature_ibrahim_kaleel.png",
-]
-SIG_PATH = None
-for candidate in SIG_CANDIDATES:
-    path = os.path.join(BASE_DIR, candidate)
-    if os.path.exists(path) and os.path.getsize(path) > 1000:
-        SIG_PATH = path
-        break
+# The signature, name and designation are pre-printed on the letterhead;
+# nothing is overlaid over them.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Issue types and labels
@@ -199,25 +186,6 @@ def generate_letter_pdf(data: dict) -> bytes:
         if current_line and y >= body_bottom_y:
             c.drawString(left_margin, y, current_line)
             y -= line_height
-
-    # ── Signature image (bottom right, on signature line) ──
-    # Enlarged: 120pt wide for better visibility
-    if SIG_PATH and os.path.exists(SIG_PATH):
-        try:
-            sig_img = ImageReader(SIG_PATH)
-            sig_w = 120
-            sig_h = sig_w / 2.44  # aspect-correct ≈ 49pt
-            c.drawImage(sig_img, 400, 55, width=sig_w, height=sig_h, mask='auto')
-        except Exception as e:
-            print(f"Signature overlay warning: {e}")
-
-    # ── Name and designation (below signature, right side) ──
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(colors.black)
-    c.drawString(400, 40, SIG_NAME)
-    c.setFont("Helvetica", 9.5)
-    c.setFillColor(colors.black)
-    c.drawString(400, 26, SIG_DESIGNATION)
 
     c.save()
     src_doc.close()
@@ -462,8 +430,6 @@ def issue_types():
 def health():
     return jsonify({
         "status": "ok",
-        "signature_loaded": SIG_PATH is not None,
-        "signature_path": os.path.basename(SIG_PATH) if SIG_PATH else None,
         "template_pdf_exists": os.path.exists(TEMPLATE_PDF),
         "ai_configured": bool(os.environ.get("MISTRAL_API_KEY")),
     })
@@ -471,9 +437,7 @@ def health():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))
-    sig_status = "loaded" if SIG_PATH else "NOT FOUND"
     print(f"SKSSF Letter Automation v4 — http://localhost:{port}")
-    print(f"  Signature: {sig_status}")
     print(f"  Letterhead: {'loaded' if os.path.exists(TEMPLATE_PDF) else 'NOT FOUND'}")
     print(f"  AI Parser: Mistral API {'configured' if os.environ.get('MISTRAL_API_KEY') else 'NOT configured'}")
     app.run(debug=False, host="0.0.0.0", port=port)
