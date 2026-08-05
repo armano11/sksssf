@@ -12,9 +12,8 @@ Letter format (matches reference letter exactly):
   Para 1: Introduction (name, place, situation)
   Para 2: Details (hospital/institution, diagnosis/issue, treatment, expenses)
   Para 3: Financial condition (income, employment, hardship)
-  Para 4: Request for assistance (templated per issue type)
-  For SKSSF Valachil Padavu Unit
-  [Signature]
+   Para 4: Request for assistance (templated per issue type)
+   [Signature]
   Ibrahim Kaleel
   G. Secretary
 """
@@ -38,7 +37,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ── Fixed recipient and signatory ──
 RECIPIENT = "To\nSKSSF Sahachari\nKendra Samithi"
-ORG_NAME = "SKSSF Valachil Padavu Unit"
 SIG_NAME = "Ibrahim Kaleel"
 SIG_DESIGNATION = "G. Secretary"
 
@@ -201,15 +199,6 @@ def generate_letter_pdf(data: dict) -> bytes:
         if current_line and y >= body_bottom_y:
             c.drawString(left_margin, y, current_line)
             y -= line_height
-
-    # ── "For SKSSF Valachil Padavu Unit" — positioned dynamically after body ──
-    # Place it 20pt below where the body text ended (y is already at next line position)
-    for_y = y - 20
-    # But don't go below 130pt from bottom (need room for signature below)
-    for_y = max(for_y, 130)
-    c.setFont("Helvetica-Bold", 10.5)
-    c.setFillColor(colors.black)
-    c.drawString(left_margin, for_y, f"For {ORG_NAME}")
 
     # ── Signature image (bottom right, on signature line) ──
     # Enlarged: 120pt wide for better visibility
