@@ -318,7 +318,7 @@ def ai_fix_body_with_mistral(text: str, issue_type: str, name: str, relation: st
     issue_label = ISSUE_LABELS.get(issue_type, "general")
     guardian_str = f"{relation} {guardian}" if guardian else ""
 
-    user_prompt = f"""Write 3 clean, formal paragraphs for an official recommendation letter from SKSSF Valachil Padavu Unit to SKSSF Sahachari Kendra Samithi.
+    user_prompt = f"""Write 3 clean, formal, and uniquely phrased paragraphs for an official recommendation letter from SKSSF Valachil Padavu Unit to SKSSF Sahachari Kendra Samithi.
 
 Applicant: {name}
 Relation: {guardian_str}
@@ -326,20 +326,24 @@ Address: {address}
 Issue Category: {issue_label}
 Notes: "{text}"
 
-CRITICAL INSTRUCTIONS FOR PARAGRAPHS:
-Paragraph 1 (Introduction): MUST start with: "This is to bring to your kind attention regarding {name}, {guardian_str}, residing at {address}." State that they require support under the {issue_label} category. DO NOT use phrases like "has approached our organization" or "seeking assistance from our committee".
-Paragraph 2 (Details): Formalize the notes ("{text}") into 2-3 formal, respectful sentences. Do NOT invent fake medical terms, amounts, or dates.
-Paragraph 3 (Financial condition): State formally in 2 sentences that the family is facing financial hardship and is unable to bear the expenses alone.
+INSTRUCTIONS FOR PARAGRAPHS:
+Paragraph 1 (Introduction): Introduce {name}, {guardian_str}, residing at {address}. State formally that this letter recommends them for assistance under the {issue_label} category. (Use varied, natural formal openings such as "We are writing to bring to your kind attention...", "This letter is to recommend...", "We kindly draw your attention to...", "We hereby bring to your notice...", etc. DO NOT use phrases like "has approached our organization" or "seeking assistance from our committee").
+Paragraph 2 (Details): Formalize the notes ("{text}") into 2-3 clear, respectful, and distinct sentences. Explain the situation naturally without inventing fake dates, fake hospital names, or fake monetary amounts.
+Paragraph 3 (Financial condition): State the family's financial hardship and need for support in 2 formal, dignified sentences.
+
+VARIETY & STYLE:
+- Vary sentence structure, phrasing, and vocabulary naturally so every generated letter sounds unique and custom-composed.
+- Keep the tone respectful, official, and dignified.
 
 Return ONLY the 3 paragraphs separated by double newlines. No intro, no title, no salutation."""
 
     payload = {
         "model": "mistral-small-latest",
         "messages": [
-            {"role": "system", "content": "You are a professional letter generator for SKSSF community organization. Write clean formal letter paragraphs."},
+            {"role": "system", "content": "You are an expert official letter writer for the SKSSF organization. You craft unique, formal, and dignified recommendation letters."},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": 0.1,
+        "temperature": 0.45,
     }
 
     try:
