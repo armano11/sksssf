@@ -318,7 +318,7 @@ def ai_fix_body_with_mistral(text: str, issue_type: str, name: str, relation: st
     issue_label = ISSUE_LABELS.get(issue_type, "general")
     guardian_str = f"{relation} {guardian}" if guardian else ""
 
-    user_prompt = f"""Write 3 clean, formal paragraphs for an official recommendation letter.
+    user_prompt = f"""Write 3 clean, formal paragraphs for an official recommendation letter from SKSSF Valachil Padavu Unit to SKSSF Sahachari Kendra Samithi.
 
 Applicant: {name}
 Relation: {guardian_str}
@@ -326,9 +326,9 @@ Address: {address}
 Issue Category: {issue_label}
 Notes: "{text}"
 
-INSTRUCTIONS FOR PARAGRAPHS:
-Paragraph 1 (Introduction): Introduce {name}, {guardian_str}, residing at {address}. State that they are seeking assistance for {issue_label}.
-Paragraph 2 (Details): Formalize the notes ("{text}") into 2-3 clean, respectful sentences. Do NOT invent fake medical terms or dates.
+CRITICAL INSTRUCTIONS FOR PARAGRAPHS:
+Paragraph 1 (Introduction): MUST start with: "This is to bring to your kind attention regarding {name}, {guardian_str}, residing at {address}." State that they require support under the {issue_label} category. DO NOT use phrases like "has approached our organization" or "seeking assistance from our committee".
+Paragraph 2 (Details): Formalize the notes ("{text}") into 2-3 formal, respectful sentences. Do NOT invent fake medical terms, amounts, or dates.
 Paragraph 3 (Financial condition): State formally in 2 sentences that the family is facing financial hardship and is unable to bear the expenses alone.
 
 Return ONLY the 3 paragraphs separated by double newlines. No intro, no title, no salutation."""
