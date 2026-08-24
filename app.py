@@ -36,8 +36,18 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # ── Fixed recipient ──
 RECIPIENT = "To\nSKSSF Sahachari\nKendra Samithi"
 
-# The signature, name and designation are pre-printed on the letterhead;
-# nothing is overlaid over them.
+# The letterhead has the name and designation printed in the bottom right,
+# but no actual signature — the real signature is overlaid above the printed name.
+SIG_CANDIDATES = [
+    "ibrahim_kaleel_signature.png",
+    "signature_ibrahim_kaleel.png",
+]
+SIG_PATH = None
+for candidate in SIG_CANDIDATES:
+    path = os.path.join(BASE_DIR, candidate)
+    if os.path.exists(path) and os.path.getsize(path) > 1000:
+        SIG_PATH = path
+        break
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Issue types and labels
@@ -187,6 +197,17 @@ def generate_letter_pdf(data: dict) -> bytes:
             c.drawString(left_margin, y, current_line)
             y -= line_height
 
+    # ── Signature image — placed above the pre-printed name (y≈112pt) ──
+    # Drawn at 150 DPI native resolution (400x104 px PNG) so it stays crisp.
+    if SIG_PATH and os.path.exists(SIG_PATH):
+        try:
+            sig_img = ImageReader(SIG_PATH)
+            sig_w = 184
+            sig_h = sig_w * 104 / 400
+            c.drawImage(sig_img, 420, 112, width=sig_w, height=sig_h, mask='auto')
+        except Exception as e:
+            print(f"Signature overlay warning: {e}")
+
     c.save()
     src_doc.close()
     out_buf.seek(0)
@@ -207,16 +228,17 @@ def ai_parse_with_mistral(text: str) -> dict:
     issue_types = ", ".join(ISSUE_LABELS.keys())
 
     system_prompt = (
-        "You are a letter parser for SKSSF, a community organization. "
-        "Extract structured information from the given text about a person in need "
-        "and return ONLY valid JSON. No explanation, no markdown."
+        "You are a strict data extractor for SKSSF, a community organization. "
+        "Extract ONLY what is explicitly stated in the input text. "
+        "NEVER invent, assume, or add any detail not present in the text. "
+        "If a field is missing, leave it empty. Return ONLY valid JSON. No explanation, no markdown."
     )
 
     user_prompt = f"""Extract the following fields from this text and return as JSON:
-- name: full name of the person in need (string, empty if not found)
-- relation: "S/o", "D/o", "W/o", or "H/o" — infer from gender/context (default "S/o")
-- guardian: parent or husband name if mentioned (string, empty if not found)
-- address: residence location if mentioned (string, empty if not found)
+- name: full name of the person in need (string, empty string "" if not found — do NOT guess)
+- relation: "S/o", "D/o", "W/o", or "H/o" — infer from gender/context only if clearly stated (default "S/o")
+- guardian: parent or husband name only if explicitly mentioned (string, empty string "" if not found)
+- address: residence location only if explicitly mentioned (string, empty string "" if not found)
 - issue_type: one of "{issue_types}". Classification rules (check in order):
   * "death_benefit" — if someone has died, expired, passed away, or demise is mentioned
   * "health" — if medical condition, hospital, disease, treatment, surgery, or illness is mentioned
@@ -226,10 +248,11 @@ def ai_parse_with_mistral(text: str) -> dict:
   * "general" — for recommendation or general support letters
   * "other" — if the issue does NOT fit any of the above categories (e.g. house repair, accident, natural disaster)
 - body: Three formal paragraphs separated by blank lines, suitable for an official community letter.
-  Paragraph 1 (Introduction): Introduce the person — name, place, marital status if relevant, and the main condition/situation. 2-3 sentences.
-  Paragraph 2 (Details): Explain the situation in detail. For health: hospital, diagnosis, treatment, expenses. For education: academic details, fees. For marriage: marriage details. For death: death details, date, cause. For financial: situation details, expenses. 2-3 sentences.
-  Paragraph 3 (Financial condition): Explain the family's financial situation — income, employment status, economic hardship. 2-3 sentences.
-  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our). Do NOT use bracketed placeholders. Do NOT invent details not present in the text — use only what is stated.
+  CRITICAL: Use ONLY information present in the text. Do NOT add city names, medical terms, amounts, diagnoses, dates, or any detail not explicitly in the text.
+  Paragraph 1 (Introduction): Introduce the person — state only name, place, and situation as given. 2-3 sentences.
+  Paragraph 2 (Details): State only the details explicitly mentioned in the text. If a detail is not in the text, omit it entirely.
+  Paragraph 3 (Financial condition): State only the financial/employment details explicitly mentioned. If not mentioned, write a generic sentence without inventing specifics.
+  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our). Do NOT use bracketed placeholders like [City] or [Amount].
 
 Text: "{text}"
 
@@ -241,7 +264,7 @@ Return ONLY JSON with these exact keys. The "body" value must contain all 3 para
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": 0.3,
+        "temperature": 0,
         "response_format": {"type": "json_object"},
     }
 
@@ -310,10 +333,10 @@ Return ONLY the 3 paragraphs. No quotes, no JSON, no explanation."""
     payload = {
         "model": "mistral-small-latest",
         "messages": [
-            {"role": "system", "content": "You are a professional letter writer for a community organization. Return only the rewritten text."},
+            {"role": "system", "content": "You are a strict letter formatter for a community organization. You only rephrase what is given to you — you never add, invent, or assume any details. Return only the rewritten text."},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": 0.3,
+        "temperature": 0,
     }
 
     r = requests.post(
@@ -430,6 +453,8 @@ def issue_types():
 def health():
     return jsonify({
         "status": "ok",
+        "signature_loaded": SIG_PATH is not None,
+        "signature_path": os.path.basename(SIG_PATH) if SIG_PATH else None,
         "template_pdf_exists": os.path.exists(TEMPLATE_PDF),
         "ai_configured": bool(os.environ.get("MISTRAL_API_KEY")),
     })
@@ -437,7 +462,9 @@ def health():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))
+    sig_status = "loaded" if SIG_PATH else "NOT FOUND"
     print(f"SKSSF Letter Automation v4 — http://localhost:{port}")
+    print(f"  Signature: {sig_status}")
     print(f"  Letterhead: {'loaded' if os.path.exists(TEMPLATE_PDF) else 'NOT FOUND'}")
     print(f"  AI Parser: Mistral API {'configured' if os.environ.get('MISTRAL_API_KEY') else 'NOT configured'}")
     app.run(debug=False, host="0.0.0.0", port=port)

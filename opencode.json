@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "alibaba": {
+      "options": {
+        "apiKey": "sk-ws-H.DMDEYXL.XzFU.MEQCIGCzI9Uqj5e8Nhg7O6l9gMFkRYNZjsLd_DO7W4kdA7lTAiBFKkuBQdTJLnPFyu7EVe-7twYd-E4q-vg7kdsRnnaYng",
+        "baseURL": "https://ws-kw3ciond0mk2so4g.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
+      }
+    }
+  },
+  "model": "alibaba/qwen-max"
+}
