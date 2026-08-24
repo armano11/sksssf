@@ -277,8 +277,13 @@ async function refineBody() {
     if (res.ok && data.fixed_body) {
       el.value = data.fixed_body.trim();
       bodyDirty = false;
+      document.getElementById('status').style.display = 'none';
+    } else {
+      showStatus('AI refinement failed — using your original text. (' + (data.error || 'Unknown error') + ')', 'error');
     }
-  } catch(err) {}
+  } catch(err) {
+    showStatus('AI refinement failed — using your original text. Check your connection.', 'error');
+  }
 }
 
 function getFormData() {
