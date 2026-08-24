@@ -12,8 +12,8 @@ Letter format (matches reference letter exactly):
   Para 1: Introduction (name, place, situation)
   Para 2: Details (hospital/institution, diagnosis/issue, treatment, expenses)
   Para 3: Financial condition (income, employment, hardship)
-   Para 4: Request for assistance (templated per issue type)
-   [Signature block — pre-printed on the letterhead]
+  Para 4: Request for assistance (templated per issue type)
+  [Signature block — pre-printed on the letterhead]
 """
 import os
 import io
@@ -36,8 +36,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # ── Fixed recipient ──
 RECIPIENT = "To\nSKSSF Sahachari\nKendra Samithi"
 
-# The letterhead has the name and designation printed in the bottom right,
-# but no actual signature — the real signature is overlaid above the printed name.
+# Signature path check
 SIG_CANDIDATES = [
     "ibrahim_kaleel_signature.png",
     "signature_ibrahim_kaleel.png",
@@ -65,7 +64,7 @@ ISSUE_LABELS = {
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Para 4 — Request paragraph (templated per issue type)
-# Paras 1-3 are AI-generated, para 4 is fixed per issue type
+# Paras 1-3 are AI-generated / formatted, para 4 is fixed per issue type
 # ─────────────────────────────────────────────────────────────────────────────
 
 REQUEST_PARAS = {
@@ -103,6 +102,30 @@ REQUEST_PARAS = {
     ),
 }
 
+def format_letter_body_fallback(name: str, relation: str, guardian: str, address: str, issue_type: str, body_text: str) -> str:
+    """Fallback generator to format rough notes into clean paragraphs when AI is unavailable."""
+    name_str = name.strip() if name else "The applicant"
+    guardian_part = f"{relation.strip()} {guardian.strip()}" if guardian else ""
+    address_part = f"residing at {address.strip()}" if address else ""
+    
+    details = [d for d in [name_str, guardian_part, address_part] if d]
+    intro = ", ".join(details)
+    
+    para1 = f"This letter is issued to bring to your kind notice regarding {intro}."
+    
+    clean_notes = body_text.strip() if body_text else ""
+    if clean_notes:
+        if name and name.lower() in clean_notes.lower() and len(clean_notes.split()) > 25:
+            return clean_notes
+        else:
+            para2 = f"The applicant is currently facing financial and personal hardship due to: {clean_notes}."
+    else:
+        para2 = "The applicant is currently in genuine need of medical/financial assistance and support."
+        
+    para3 = "The family's economic condition is very weak, and they are struggling to meet the necessary expenses on their own."
+    
+    return f"{para1}\n\n{para2}\n\n{para3}"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PDF generation
 # ─────────────────────────────────────────────────────────────────────────────
@@ -116,16 +139,13 @@ def generate_letter_pdf(data: dict) -> bytes:
     body_text = data.get("body", "").strip()
     date_str = data.get("date", datetime.date.today().strftime("%d/%m/%Y"))
 
+    # Ensure body is formatted into full letter paragraphs if it's short or missing applicant info
+    if not body_text or (name and name.lower() not in body_text.lower() and len(body_text.split()) < 30):
+        body_text = format_letter_body_fallback(name, relation, guardian, address, issue_type, body_text)
+
     # Build the full letter body:
     # To + recipient + paras 1-3 (from body) + para 4 (templated)
     request_para = REQUEST_PARAS.get(issue_type, REQUEST_PARAS["general"])
-
-    # If body is empty, use a placeholder
-    if not body_text:
-        body_text = (
-            f"{name}, {relation} of {guardian if guardian else '—'}, residing at "
-            f"{address if address else '—'}, is in need of assistance."
-        )
 
     # Compose the full text that gets rendered on the PDF
     full_text = RECIPIENT + "\n\n" + body_text + "\n\n" + request_para
@@ -198,7 +218,6 @@ def generate_letter_pdf(data: dict) -> bytes:
             y -= line_height
 
     # ── Signature image — placed above the pre-printed name (y≈112pt) ──
-    # Drawn at 150 DPI native resolution (400x104 px PNG) so it stays crisp.
     if SIG_PATH and os.path.exists(SIG_PATH):
         try:
             sig_img = ImageReader(SIG_PATH)
@@ -216,14 +235,13 @@ def generate_letter_pdf(data: dict) -> bytes:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AI Parser — uses Mistral API
-# Generates 3 paragraphs (intro, details, financial condition)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def ai_parse_with_mistral(text: str) -> dict:
     """Parse raw text using Mistral API to extract structured letter fields."""
-    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    api_key = os.environ.get("MISTRAL_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("MISTRAL_API_KEY not configured")
+        raise RuntimeError("MISTRAL_API_KEY not configured on server")
 
     issue_types = ", ".join(ISSUE_LABELS.keys())
 
@@ -231,32 +249,20 @@ def ai_parse_with_mistral(text: str) -> dict:
         "You are a strict data extractor for SKSSF, a community organization. "
         "Extract ONLY what is explicitly stated in the input text. "
         "NEVER invent, assume, or add any detail not present in the text. "
-        "If a field is missing, leave it empty. Return ONLY valid JSON. No explanation, no markdown."
+        "If a field is missing, leave it empty. Return ONLY valid JSON."
     )
 
     user_prompt = f"""Extract the following fields from this text and return as JSON:
-- name: full name of the person in need (string, empty string "" if not found — do NOT guess)
-- relation: "S/o", "D/o", "W/o", or "H/o" — infer from gender/context only if clearly stated (default "S/o")
+- name: full name of the person in need (string, empty string "" if not found)
+- relation: "S/o", "D/o", "W/o", or "H/o" — infer from gender/context (default "S/o")
 - guardian: parent or husband name only if explicitly mentioned (string, empty string "" if not found)
 - address: residence location only if explicitly mentioned (string, empty string "" if not found)
-- issue_type: one of "{issue_types}". Classification rules (check in order):
-  * "death_benefit" — if someone has died, expired, passed away, or demise is mentioned
-  * "health" — if medical condition, hospital, disease, treatment, surgery, or illness is mentioned
-  * "education" — if school, college, fees, student, study, or scholarship is mentioned
-  * "marriage" — if marriage, wedding, or post-marriage financial hardship is mentioned
-  * "financial" — if general financial hardship, debt, poverty, or money problems are mentioned (NOT covered by above)
-  * "general" — for recommendation or general support letters
-  * "other" — if the issue does NOT fit any of the above categories (e.g. house repair, accident, natural disaster)
+- issue_type: one of "{issue_types}".
 - body: Three formal paragraphs separated by blank lines, suitable for an official community letter.
-  CRITICAL: Use ONLY information present in the text. Do NOT add city names, medical terms, amounts, diagnoses, dates, or any detail not explicitly in the text.
-  Paragraph 1 (Introduction): Introduce the person — state only name, place, and situation as given. 2-3 sentences.
-  Paragraph 2 (Details): State only the details explicitly mentioned in the text. If a detail is not in the text, omit it entirely.
-  Paragraph 3 (Financial condition): State only the financial/employment details explicitly mentioned. If not mentioned, write a generic sentence without inventing specifics.
-  All paragraphs: third person, formal respectful tone, no greetings, no salutations, no first person pronouns (I, we, our). Do NOT use bracketed placeholders like [City] or [Amount].
 
 Text: "{text}"
 
-Return ONLY JSON with these exact keys. The "body" value must contain all 3 paragraphs separated by double newlines."""
+Return ONLY JSON with these exact keys."""
 
     payload = {
         "model": "mistral-small-latest",
@@ -272,10 +278,10 @@ Return ONLY JSON with these exact keys. The "body" value must contain all 3 para
         "https://api.mistral.ai/v1/chat/completions",
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         json=payload,
-        timeout=30,
+        timeout=20,
     )
     if r.status_code != 200:
-        raise RuntimeError(f"Mistral API error: {r.status_code} — {r.text[:200]}")
+        raise RuntimeError(f"Mistral API error ({r.status_code}): {r.text[:150]}")
 
     content = r.json()["choices"][0]["message"]["content"]
     parsed = json.loads(content)
@@ -300,58 +306,61 @@ Return ONLY JSON with these exact keys. The "body" value must contain all 3 para
     return defaults
 
 
-def ai_fix_body_with_mistral(text: str, issue_type: str, name: str) -> str:
+def ai_fix_body_with_mistral(text: str, issue_type: str, name: str, relation: str = "S/o", guardian: str = "", address: str = "") -> str:
     """Use Mistral to clean up / formalize the body text into 3 proper paragraphs."""
-    api_key = os.environ.get("MISTRAL_API_KEY", "")
+    api_key = os.environ.get("MISTRAL_API_KEY", "").strip()
+
+    # If no API key configured, use smart fallback formatter immediately
     if not api_key:
-        raise RuntimeError("MISTRAL_API_KEY not configured")
+        print("MISTRAL_API_KEY not set. Using smart fallback formatter.")
+        return format_letter_body_fallback(name, relation, guardian, address, issue_type, text)
 
     issue_label = ISSUE_LABELS.get(issue_type, "general")
+    guardian_str = f"{relation} {guardian}" if guardian else ""
 
-    user_prompt = f"""Rewrite the following rough text into 3 clean, formal paragraphs for an official letter.
+    user_prompt = f"""Write 3 clean, formal paragraphs for an official recommendation letter.
 
-STRICT RULES — VIOLATION = FAILURE:
-- Use ONLY information present in the rough text. Do NOT invent, assume, or add ANY detail not explicitly stated.
-- Do NOT add city names, dates, medical terms, amounts, or conditions that are not in the original text.
-- Do NOT use placeholders like [City], [Date], [Name] — if a detail is missing, simply omit it.
-- Only rephrase and formalize what is already written. You are cleaning up grammar and tone, NOT adding content.
-- Keep it in third person. No greetings, no salutations, no first person pronouns (I, we, our).
-- Separate the 3 paragraphs with a blank line. Each paragraph: 2-3 sentences.
+Applicant: {name}
+Relation: {guardian_str}
+Address: {address}
+Issue Category: {issue_label}
+Notes: "{text}"
 
-Paragraph structure:
-1. Introduction: Who is the person, where do they live, what is their situation (ONLY from the text).
-2. Details: What happened, where, what costs (ONLY from the text).
-3. Financial condition: Income, employment, hardship (ONLY from the text).
+INSTRUCTIONS FOR PARAGRAPHS:
+Paragraph 1 (Introduction): Introduce {name}, {guardian_str}, residing at {address}. State that they are seeking assistance for {issue_label}.
+Paragraph 2 (Details): Formalize the notes ("{text}") into 2-3 clean, respectful sentences. Do NOT invent fake medical terms or dates.
+Paragraph 3 (Financial condition): State formally in 2 sentences that the family is facing financial hardship and is unable to bear the expenses alone.
 
-Issue type: {issue_label}
-Person name: {name}
-
-Rough text: "{text}"
-
-Return ONLY the 3 paragraphs. No quotes, no JSON, no explanation."""
+Return ONLY the 3 paragraphs separated by double newlines. No intro, no title, no salutation."""
 
     payload = {
         "model": "mistral-small-latest",
         "messages": [
-            {"role": "system", "content": "You are a strict letter formatter for a community organization. You only rephrase what is given to you — you never add, invent, or assume any details. Return only the rewritten text."},
+            {"role": "system", "content": "You are a professional letter generator for SKSSF community organization. Write clean formal letter paragraphs."},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": 0,
+        "temperature": 0.1,
     }
 
-    r = requests.post(
-        "https://api.mistral.ai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json=payload,
-        timeout=30,
-    )
-    if r.status_code != 200:
-        raise RuntimeError(f"Mistral API error: {r.status_code}")
+    try:
+        r = requests.post(
+            "https://api.mistral.ai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=20,
+        )
+        if r.status_code == 200:
+            content = r.json()["choices"][0]["message"]["content"].strip()
+            if content.startswith('"') and content.endswith('"'):
+                content = content[1:-1]
+            return content
+        else:
+            print(f"Mistral API call failed ({r.status_code}): {r.text[:200]}")
+    except Exception as e:
+        print(f"Mistral API call exception: {e}")
 
-    content = r.json()["choices"][0]["message"]["content"].strip()
-    if content.startswith('"') and content.endswith('"'):
-        content = content[1:-1]
-    return content
+    # Fallback to template formatter if AI call fails
+    return format_letter_body_fallback(name, relation, guardian, address, issue_type, text)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -427,14 +436,17 @@ def ai_fix():
     text = data.get("text", "").strip()
     issue_type = data.get("issue_type", "general")
     name = data.get("name", "")
+    relation = data.get("relation", "S/o")
+    guardian = data.get("guardian", "")
+    address = data.get("address", "")
     if not text:
         return jsonify({"error": "No text provided"}), 400
     try:
-        fixed = ai_fix_body_with_mistral(text, issue_type, name)
+        fixed = ai_fix_body_with_mistral(text, issue_type, name, relation, guardian, address)
         return jsonify({
             "status": "success",
             "fixed_body": fixed,
-            "message": "AI cleaned up the letter body!",
+            "message": "Letter body refined successfully!",
         })
     except Exception as e:
         return jsonify({

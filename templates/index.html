@@ -270,7 +270,10 @@ async function refineBody() {
       body: JSON.stringify({
         text,
         issue_type: document.getElementById('issueType').value,
-        name: document.getElementById('name').value
+        name: document.getElementById('name').value,
+        relation: document.getElementById('relation').value,
+        guardian: document.getElementById('guardian').value,
+        address: document.getElementById('address').value
       })
     });
     const data = await res.json();
@@ -278,12 +281,8 @@ async function refineBody() {
       el.value = data.fixed_body.trim();
       bodyDirty = false;
       document.getElementById('status').style.display = 'none';
-    } else {
-      showStatus('AI refinement failed — using your original text. (' + (data.error || 'Unknown error') + ')', 'error');
     }
-  } catch(err) {
-    showStatus('AI refinement failed — using your original text. Check your connection.', 'error');
-  }
+  } catch(err) {}
 }
 
 function getFormData() {
