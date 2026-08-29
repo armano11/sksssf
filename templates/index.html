@@ -113,6 +113,10 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 .preview-placeholder .ph-text{font-size:.84rem}
 .preview-frame{width:100%;height:520px;border:none;display:none;background:#eceeee}
 @media(min-width:920px){.preview-frame{height:640px}}
+.btn-sm{padding:5px 11px;border-radius:var(--radius-sm);font-size:.76rem;font-weight:600;background:var(--primary-light);color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border2);transition:background .15s;cursor:pointer}
+.btn-sm:hover{background:#dbe9e3}
+.mobile-notice{display:none;padding:10px 14px;background:#fdf6ea;border-top:1px solid #f2e3c6;font-size:.78rem;color:#7a5c14;align-items:center;justify-content:space-between;gap:8px}
+.mobile-notice a{font-weight:700;color:var(--primary);text-decoration:underline}
 
 .footer{text-align:center;padding:20px 16px 28px;font-size:.72rem;color:var(--muted2)}
 </style>
@@ -228,14 +232,24 @@ select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%
 
   <div class="preview-wrap">
     <div class="preview-header">
-      <div class="title">Live Preview</div>
-      <span id="previewInfo"></span>
+      <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+        <div class="title">Live Preview</div>
+        <span id="previewInfo"></span>
+      </div>
+      <a id="openPreviewBtn" target="_blank" rel="noopener" class="btn-sm" style="display:none;" href="#">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Open PDF
+      </a>
     </div>
     <div class="preview-placeholder" id="previewPlaceholder">
       <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
       <div class="ph-text">Fill the form and tap Preview</div>
     </div>
     <iframe class="preview-frame" id="previewFrame"></iframe>
+    <div class="mobile-notice" id="mobileNotice">
+      <span>📱 Viewing on phone? Tap to view or download:</span>
+      <a id="mobileNoticeBtn" target="_blank" rel="noopener" href="#">Open PDF</a>
+    </div>
   </div>
 </div>
 
@@ -317,6 +331,64 @@ function showStatus(msg, type) {
   if (type !== 'loading') setTimeout(() => el.style.display = 'none', 4000);
 }
 
+let currentPreviewUrl = null;
+
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    || window.innerWidth < 920;
+}
+
+function isIOSDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) 
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function downloadPdfBlob(blob, filename, formData = null) {
+  const url = URL.createObjectURL(blob);
+  
+  if (isIOSDevice()) {
+    const newTab = window.open(url, '_blank');
+    if (!newTab) {
+      window.location.href = url;
+    }
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (a.parentNode) document.body.removeChild(a);
+    }, 200);
+  }
+  
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function submitDirectDownloadForm(data) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/download_direct';
+  form.target = '_blank';
+
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = data[key];
+      form.appendChild(input);
+    }
+  }
+  document.body.appendChild(form);
+  form.submit();
+  setTimeout(() => {
+    if (form.parentNode) document.body.removeChild(form);
+  }, 500);
+}
+
 async function previewLetter() {
   const data = getFormData();
   if (!validate(data)) return;
@@ -330,12 +402,39 @@ async function previewLetter() {
     });
     if (!res.ok) throw new Error(await res.text());
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
+    
+    if (currentPreviewUrl) {
+      URL.revokeObjectURL(currentPreviewUrl);
+    }
+    currentPreviewUrl = URL.createObjectURL(blob);
+    
     document.getElementById('previewPlaceholder').style.display = 'none';
     const frame = document.getElementById('previewFrame');
-    frame.src = url; frame.style.display = 'block';
+    frame.src = currentPreviewUrl;
+    frame.style.display = 'block';
+
+    const openBtn = document.getElementById('openPreviewBtn');
+    if (openBtn) {
+      openBtn.href = currentPreviewUrl;
+      openBtn.style.display = 'inline-flex';
+    }
+
+    const mobileNotice = document.getElementById('mobileNotice');
+    const mobileNoticeBtn = document.getElementById('mobileNoticeBtn');
+    if (mobileNotice && mobileNoticeBtn) {
+      mobileNoticeBtn.href = currentPreviewUrl;
+      mobileNotice.style.display = isMobileDevice() ? 'flex' : 'none';
+    }
+
     document.getElementById('previewInfo').textContent = `${data.name} — ${data.issue_type.replace('_', ' ')}`;
     document.getElementById('status').style.display = 'none';
+
+    if (isIOSDevice()) {
+      window.open(currentPreviewUrl, '_blank');
+    } else if (isMobileDevice()) {
+      const wrap = document.querySelector('.preview-wrap');
+      if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   } catch(e) {
     showStatus('Preview failed: ' + e.message, 'error');
   }
@@ -354,17 +453,26 @@ async function generateLetter() {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) {
+      submitDirectDownloadForm(data);
+      showStatus('PDF download initiated.', 'success');
+      addRecord(data);
+      return;
+    }
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SKSSF_Letter_${data.name.replace(/\s+/g, '_')}_${today.replace(/-/g, '')}.pdf`;
-    a.click(); URL.revokeObjectURL(url);
-    showStatus('PDF downloaded.', 'success');
+    const filename = `SKSSF_Letter_${data.name.replace(/\s+/g, '_')}_${today.replace(/-/g, '')}.pdf`;
+    
+    downloadPdfBlob(blob, filename, data);
+    showStatus('PDF ready.', 'success');
     addRecord(data);
   } catch(e) {
-    showStatus('Generation failed: ' + e.message, 'error');
+    try {
+      submitDirectDownloadForm(data);
+      showStatus('PDF download initiated.', 'success');
+      addRecord(data);
+    } catch(err) {
+      showStatus('Generation failed: ' + e.message, 'error');
+    }
   } finally { btn.disabled = false; }
 }
 
@@ -410,17 +518,25 @@ function renderRecords() {
 
 async function regenAndDownload(idx) {
   const data = records[idx];
+  showStatus('Preparing download...', 'loading');
   try {
     const res = await fetch('/generate', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     });
+    if (!res.ok) {
+      submitDirectDownloadForm(data);
+      showStatus('PDF download initiated.', 'success');
+      return;
+    }
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `SKSSF_Letter_${data.name.replace(/\s+/g, '_')}.pdf`;
-    a.click(); URL.revokeObjectURL(url);
-  } catch(e) { showStatus('Re-download failed: ' + e.message, 'error'); }
+    const filename = `SKSSF_Letter_${data.name.replace(/\s+/g, '_')}.pdf`;
+    downloadPdfBlob(blob, filename, data);
+    showStatus('PDF ready.', 'success');
+  } catch(e) {
+    submitDirectDownloadForm(data);
+    showStatus('PDF download initiated.', 'success');
+  }
 }
 
 function clearRecords() {

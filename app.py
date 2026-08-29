@@ -385,15 +385,57 @@ def generate():
         pdf_bytes = generate_letter_pdf(data)
         name_slug = data["name"].replace(" ", "_")
         filename = f"SKSSF_Letter_{name_slug}_{datetime.date.today().strftime('%Y%m%d')}.pdf"
-        return send_file(
+        response = send_file(
             io.BytesIO(pdf_bytes),
             mimetype="application/pdf",
             as_attachment=True,
             download_name=filename,
         )
+        response.headers["Content-Disposition"] = f"attachment; filename=\"{filename}\""
+        response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
+        return response
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/download_direct", methods=["POST"])
+def download_direct():
+    name = request.form.get("name", "").strip()
+    relation = request.form.get("relation", "S/o").strip()
+    guardian = request.form.get("guardian", "").strip()
+    address = request.form.get("address", "").strip()
+    issue_type = request.form.get("issue_type", "general")
+    body_text = request.form.get("body", "").strip()
+    date_str = request.form.get("date", datetime.date.today().strftime("%d/%m/%Y"))
+
+    if not name:
+        return "Name is required", 400
+
+    data = {
+        "name": name,
+        "relation": relation,
+        "guardian": guardian,
+        "address": address,
+        "issue_type": issue_type,
+        "body": body_text,
+        "date": date_str,
+    }
+
+    try:
+        pdf_bytes = generate_letter_pdf(data)
+        name_slug = name.replace(" ", "_")
+        filename = f"SKSSF_Letter_{name_slug}_{datetime.date.today().strftime('%Y%m%d')}.pdf"
+        response = send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=filename,
+        )
+        response.headers["Content-Disposition"] = f"attachment; filename=\"{filename}\""
+        return response
+    except Exception as e:
+        return f"Error generating PDF: {e}", 500
 
 
 @app.route("/preview", methods=["POST"])
@@ -403,11 +445,13 @@ def preview():
         return jsonify({"error": "No data"}), 400
     try:
         pdf_bytes = generate_letter_pdf(data)
-        return send_file(
+        response = send_file(
             io.BytesIO(pdf_bytes),
             mimetype="application/pdf",
             as_attachment=False,
         )
+        response.headers["Content-Disposition"] = "inline; filename=preview.pdf"
+        return response
     except Exception as e:
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
